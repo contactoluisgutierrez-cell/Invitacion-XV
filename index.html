@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis XV Años - Ximena Blanco Castillo</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=Montserrat:wght@200;300;400;500;600&family=Pinyon+Script&display=swap" rel="stylesheet">
+    <!-- FontAwesome for elegant icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- WAX SEAL ENVELOPE INTRO SCREEN -->
+    <div id="envelope-wrapper" class="envelope-overlay">
+        <div class="envelope-container">
+            <!-- Front Flaps simulating folding paper -->
+            <div class="envelope-flap flap-top"></div>
+            <div class="envelope-flap flap-bottom"></div>
+            <div class="envelope-flap flap-left"></div>
+            <div class="envelope-flap flap-right"></div>
+            
+            <div class="envelope-card-inside">
+                <span class="envelope-greeting">Ximena Blanco Castillo</span>
+                <span class="envelope-invite-text">Estás cordialmente invitado a mis XV Años</span>
+            </div>
+            
+            <!-- Interactive 3D Golden Wax Seal -->
+            <div id="wax-seal" class="wax-seal-btn" aria-label="Abrir invitación">
+                <div class="wax-seal-inner">
+                    <span class="wax-monogram">X</span>
+                </div>
+                <span class="click-prompt">Toca para abrir</span>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- LOCK SCREEN OVERLAY -->
+    <div id="lock-screen" class="lock-screen-overlay hidden">
+        <div class="lock-card glass-card text-center">
+            <!-- Monogram in Lock Screen -->
+            <div class="lock-monogram">
+                <svg viewBox="0 0 100 100" class="monogram-svg">
+                    <defs>
+                        <linearGradient id="goldGradLock" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f9e29c" />
+                            <stop offset="50%" stop-color="#d4af37" />
+                            <stop offset="100%" stop-color="#b8860b" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="url(#goldGradLock)" stroke-width="1.2" stroke-dasharray="3 3"/>
+                    <circle cx="50" cy="50" r="38" fill="none" stroke="url(#goldGradLock)" stroke-width="0.6"/>
+                    <text x="50" y="61" font-family="'Cinzel', serif" font-size="32" font-weight="600" fill="url(#goldGradLock)" text-anchor="middle">X</text>
+                </svg>
+            </div>
+            
+            <i class="fas fa-lock lock-icon-main"></i>
+            <h2>Invitación Privada</h2>
+            <p class="lock-instruction">Introduce la contraseña de acceso o ingresa mediante el enlace personalizado.</p>
+            
+            <div class="lock-form-group">
+                <input type="password" id="lock-password" placeholder="Contraseña de acceso" autofocus>
+                <button id="btn-unlock" class="btn btn-primary btn-block"><i class="fas fa-key"></i> Acceder</button>
+            </div>
+            <p id="lock-error-msg" class="lock-error hidden">Contraseña incorrecta. Por favor, intenta de nuevo.</p>
+        </div>
+    </div>
+
+    <!-- MAIN INVITATION CONTENT -->
+    <div id="main-content" class="invitation-container blurred">
+
+        <!-- HERO SECTION -->
+        <section id="hero" class="hero-section">
+            <div class="hero-overlay"></div>
+            <!-- Canvas for Magical Glitter Effect -->
+            <canvas id="sparkles-canvas" class="hero-sparkles"></canvas>
+            
+            <div class="hero-content">
+                <!-- Elegant Monogram -->
+                <div class="monogram-container animate-fade-in">
+                    <svg viewBox="0 0 100 100" class="monogram-svg">
+                        <defs>
+                            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#f9e29c" />
+                                <stop offset="50%" stop-color="#d4af37" />
+                                <stop offset="100%" stop-color="#b8860b" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#goldGrad)" stroke-width="1.2" stroke-dasharray="3 3"/>
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="url(#goldGrad)" stroke-width="0.6"/>
+                        <text x="50" y="61" font-family="'Cinzel Decorative', serif" font-size="32" font-weight="600" fill="url(#goldGrad)" text-anchor="middle">X</text>
+                    </svg>
+                </div>
+                <span class="hero-subtitle animate-fade-in">Te invito a celebrar</span>
+                <h1 class="quinceanera-name animate-slide-up">Ximena Blanco Castillo</h1>
+                <span class="hero-subtitle-details animate-fade-in">Mis XV Años</span>
+                
+                <!-- Countdown Timer -->
+                <div class="countdown-wrapper animate-fade-in-delayed">
+                    <div class="countdown-item">
+                        <span id="days" class="time-num">00</span>
+                        <span class="time-label">Días</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span id="hours" class="time-num">00</span>
+                        <span class="time-label">Hrs</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span id="minutes" class="time-num">00</span>
+                        <span class="time-label">Min</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span id="seconds" class="time-num">00</span>
+                        <span class="time-label">Seg</span>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <span class="scroll-text">Desliza para ver más</span>
+                    <i class="fas fa-chevron-down scroll-arrow"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- WELCOME QUOTE -->
+        <section class="welcome-section section-padding scroll-reveal">
+            <div class="card glass-card text-center welcome-card">
+                <div class="decor-corner decor-top-left"></div>
+                <div class="decor-corner decor-top-right"></div>
+                <div class="decor-corner decor-bottom-left"></div>
+                <div class="decor-corner decor-bottom-right"></div>
+                
+                <i class="fas fa-heart welcome-icon"></i>
+                <p class="welcome-quote">
+                    "Hay momentos en la vida que son irrepetibles, pero compartirlos con las personas que más queremos los hace inolvidables. Acompáñame a celebrar un día mágico."
+                </p>
+                <div class="divider"></div>
+                
+                <div class="family-host-row">
+                    <div class="family-col">
+                        <strong>Con la bendición de mis padres:</strong>
+                        <p class="parents-names">Julio César Cazarin Barrios<br>&amp;<br>María Esther Blanco Castillo</p>
+                    </div>
+                    <div class="family-col mt-3 mt-md-0">
+                        <strong>Y mi madrina:</strong>
+                        <p class="parents-names">Sandra Luz Blanco Castillo</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- EVENT DETAILS (LOCATIONS & CALENDAR) -->
+        <section class="events-section section-padding scroll-reveal">
+            <h2 class="section-title">Ubicaciones</h2>
+            
+            <div class="events-grid">
+                
+                <!-- MISA CARD -->
+                <div class="event-card glass-card">
+                    <div class="event-img-container">
+                        <img src="assets/misa.png" alt="Ceremonia Religiosa" class="event-img">
+                        <div class="event-badge"><i class="fas fa-church"></i> Misa</div>
+                    </div>
+                    <div class="event-body">
+                        <h3>Misa de Acción de Gracias</h3>
+                        <p class="event-time"><i class="far fa-clock"></i> 3:00 PM</p>
+                        <h4 class="venue-name">Parroquia Jesucristo sumo y eterno sacerdote</h4>
+                        <p class="event-address">
+                            <i class="fas fa-map-marker-alt"></i> Playa Roqueta, Av. Pie de la Cuesta 101 esquina, Desarrollo San Pablo, 76125 Querétaro, Qro.
+                        </p>
+                        
+                        <!-- Embedded Google Map -->
+                        <div class="map-container">
+                            <iframe 
+                                src="https://maps.google.com/maps?q=Parroquia%20Jesucristo%20sumo%20y%20eterno%20sacerdote%20Quer%C3%A9taro&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                                width="100%" 
+                                height="200" 
+                                style="border:0;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+
+                        <div class="button-group-row">
+                            <a href="https://maps.google.com/?q=Parroquia+Jesucristo+sumo+y+eterno+sacerdote+Querétaro" target="_blank" class="btn btn-primary btn-sm btn-icon">
+                                <i class="fas fa-directions"></i> Ruta Google Maps
+                            </a>
+                            <button type="button" class="btn btn-secondary btn-sm btn-icon btn-add-calendar" data-event="misa">
+                                <i class="far fa-calendar-plus"></i> Agendar Misa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECEPCION CARD -->
+                <div class="event-card glass-card">
+                    <div class="event-img-container">
+                        <img src="assets/recepcion.png" alt="Recepción" class="event-img">
+                        <div class="event-badge"><i class="fas fa-glass-cheers"></i> Fiesta</div>
+                    </div>
+                    <div class="event-body">
+                        <h3>Recepción y Banquete</h3>
+                        <p class="event-time"><i class="far fa-clock"></i> 5:30 PM</p>
+                        <h4 class="venue-name">Salón del Río</h4>
+                        <p class="event-address">
+                            <i class="fas fa-map-marker-alt"></i> Av. Universidad 187 Pte, Centro, 76000 Querétaro, Qro.
+                        </p>
+                        
+                        <!-- Embedded Google Map -->
+                        <div class="map-container">
+                            <iframe 
+                                src="https://maps.google.com/maps?q=salon%20del%20rio%20Av.%20Universidad%20187%20Pte%2C%20Centro%2C%20Santiago%20de%20Quer%C3%A9taro%2C%20Qro&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                                width="100%" 
+                                height="200" 
+                                style="border:0;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+
+                        <div class="button-group-row">
+                            <a href="https://maps.google.com/?q=salon+del+rio+Av.+Universidad+187+Pte+Querétaro" target="_blank" class="btn btn-primary btn-sm btn-icon">
+                                <i class="fas fa-directions"></i> Ruta Google Maps
+                            </a>
+                            <button type="button" class="btn btn-secondary btn-sm btn-icon btn-add-calendar" data-event="recepcion">
+                                <i class="far fa-calendar-plus"></i> Agendar Recepción
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- DRESS CODE SECTION -->
+        <section class="dress-code-section section-padding scroll-reveal">
+            <div class="card glass-card text-center">
+                <i class="fas fa-tshirt dress-icon"></i>
+                <h2>Código de Vestimenta</h2>
+                <p class="dress-style">Formal / Gala</p>
+                <div class="divider"></div>
+                
+                <!-- Exclusive Color Rule Alert -->
+                <div class="color-alert-box">
+                    <i class="fas fa-exclamation-circle alert-icon"></i>
+                    <p class="alert-text">
+                        <strong>Aviso Especial:</strong> El color **rosa pastel o rosa bajito** está reservado exclusivamente para Ximena. Les pedimos elegir cualquier otro tono de su agrado.
+                    </p>
+                </div>
+
+                <!-- Custom Luxury Palette Moodboard -->
+                <div class="moodboard-container">
+                    <p class="moodboard-title">Colores Reservados (Evitar vestir):</p>
+                    <div class="color-bubbles">
+                        <div class="color-bubble pastel-pink-reserved" title="Rosa Pastel (Reservado)">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <div class="color-bubble light-pink-reserved" title="Rosa Bajito (Reservado)">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RSVP / CONFIRMATION SECTION (INTERACTIVE LIVE TICKET) -->
+        <section class="rsvp-section section-padding scroll-reveal">
+            <div class="rsvp-grid-container">
+                
+                <!-- Left Column: Form -->
+                <div class="rsvp-form-container glass-card">
+                    <div class="rsvp-header-text">
+                        <i class="fas fa-envelope-open-text rsvp-icon"></i>
+                        <h2>Confirmación de Asistencia</h2>
+                        <p class="rsvp-subtitle">Por favor confirma tu asistencia antes del 10 de Agosto de 2026.</p>
+                    </div>
+
+                    <form id="rsvp-form" class="rsvp-form mt-4">
+                        <div class="form-group">
+                            <label for="guest-name"><i class="fas fa-user"></i> Nombre de la Familia / Invitado</label>
+                            <input type="text" id="guest-name" name="guest-name" placeholder="Ej. Familia Cazarin Blanco" required autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="guest-phone"><i class="fab fa-whatsapp"></i> Número de WhatsApp (Celular a 10 dígitos)</label>
+                            <input type="tel" id="guest-phone" name="guest-phone" placeholder="Ej. 4421234567" required pattern="[0-9]{10}" title="Por favor ingresa un número de celular a 10 dígitos sin espacios ni guiones." autocomplete="off">
+                        </div>
+
+                        <!-- Hidden counter to preserve DOM elements and prevent JS errors -->
+                        <div class="form-group" style="display: none;">
+                            <span id="guest-count" class="counter-val">0</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-ticket-alt"></i> Asignación de Pases</label>
+                            <p class="counter-info" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 5px;">
+                                La organizadora asignará el número de pases para tu familia tras recibir tu registro, y tu pase digital final te llegará directamente a tu WhatsApp.
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-question-circle"></i> ¿Asistirán al evento?</label>
+                            <div class="attendance-options">
+                                <label class="attendance-radio">
+                                    <input type="radio" name="attendance" value="si" checked>
+                                    <span class="radio-design"></span>
+                                    <span class="radio-label">Sí, asistiremos con gusto</span>
+                                </label>
+                                <label class="attendance-radio">
+                                    <input type="radio" name="attendance" value="no">
+                                    <span class="radio-design"></span>
+                                    <span class="radio-label">Lo sentimos, no podremos asistir</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block mt-4 btn-icon">
+                            <i class="fab fa-whatsapp"></i> Confirmar y Generar Pase
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Right Column: Live Ticket Pass -->
+                <div class="ticket-preview-container">
+                    <div id="rsvp-live-ticket" class="live-ticket">
+                        <div class="ticket-stub">
+                            <div class="stub-circle-top"></div>
+                            <div class="stub-circle-bottom"></div>
+                            <div class="ticket-stub-inner">
+                                <span class="stub-event">XV</span>
+                                <span class="stub-monogram">XBC</span>
+                                <span class="stub-date">29.AGO.26</span>
+                            </div>
+                        </div>
+                        <div class="ticket-body">
+                            <div class="ticket-header">
+                                <span class="ticket-header-title">PASE DE ACCESO DIGITAL</span>
+                                <h3 class="ticket-quinceanera">XIMENA BLANCO</h3>
+                            </div>
+                            <div class="ticket-divider"></div>
+                            <div class="ticket-info">
+                                <div class="info-group">
+                                    <span class="info-label">INVITADO</span>
+                                    <span id="ticket-guest-name" class="info-val">Invitado Principal</span>
+                                </div>
+                                <div class="info-group-row">
+                                    <div class="info-group">
+                                        <span class="info-label">PASES</span>
+                                        <span id="ticket-guest-count" class="info-val">Pendiente</span>
+                                    </div>
+                                    <div class="info-group">
+                                        <span class="info-label">CÓDIGO</span>
+                                        <span id="ticket-guest-code" class="info-val">XV-PENDIENTE</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Real-time dynamic barcode -->
+                            <div class="ticket-barcode-area">
+                                <div class="barcode-graphic">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden 3D Wax Seal Confirmation Stamp (Triggered in JS) -->
+                            <div id="ticket-wax-seal-stamp" class="ticket-wax-stamp hidden">
+                                <div class="stamp-inner">
+                                    <span>CONFIRMADO</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Success Confirmation Screen -->
+            <div id="rsvp-success-msg" class="success-box hidden glass-card mt-5 max-w-md mx-auto">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h3 id="success-status-title">¡Pase Confirmado!</h3>
+                <p id="success-status-desc">Tu confirmación fue guardada. Te hemos redirigido a WhatsApp para notificar.</p>
+                
+                <div id="final-ticket-placeholder" class="mt-4">
+                    <!-- Ticket will be moved here dynamically in print layout -->
+                </div>
+                
+                <div id="success-action-buttons" class="success-buttons mt-4">
+                    <button id="btn-download-pass" type="button" class="btn btn-primary btn-icon btn-block mb-2">
+                        <i class="fas fa-download"></i> Guardar Pase en PDF
+                    </button>
+                    <a id="btn-send-self-whatsapp" href="#" target="_blank" class="btn btn-primary btn-icon btn-block mb-2" style="background: #25d366; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);">
+                        <i class="fab fa-whatsapp"></i> Recibir Pase en mi WhatsApp
+                    </a>
+                </div>
+                <button id="btn-reset-form" class="btn btn-secondary btn-block mt-3">Registrar otra respuesta</button>
+            </div>
+        </section>
+
+        <!-- FOOTER & ADMIN DRAWER -->
+        <footer class="footer section-padding text-center">
+            <p class="footer-thankyou">¡Te esperamos para compartir este momento inolvidable!</p>
+            <p class="footer-signature">Ximena Blanco Castillo &bull; 2026</p>
+            
+            <button id="admin-toggle-btn" class="admin-btn mt-4 hidden">
+                <i class="fas fa-cog"></i> Panel de Invitados Confirmados
+            </button>
+        </footer>
+
+        <!-- ADMIN PANEL DRAWER -->
+        <div id="admin-drawer" class="admin-drawer hidden">
+            <div class="admin-drawer-content glass-card">
+                <div class="admin-drawer-header">
+                    <h3><i class="fas fa-users-cog"></i> Invitados Confirmados (Panel Administrador)</h3>
+                    <button id="admin-close-btn" class="close-btn">&times;</button>
+                </div>
+                <div class="admin-summary">
+                    <div class="summary-box">
+                        <span class="summary-num" id="total-confirmed-guests">0</span>
+                        <span class="summary-label">Pases Totales</span>
+                    </div>
+                    <div class="summary-box">
+                        <span class="summary-num" id="total-confirmed-families">0</span>
+                        <span class="summary-label">Familias</span>
+                    </div>
+                </div>
+                <div class="admin-list-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                             <tr>
+                                 <th>Nombre / Familia</th>
+                                 <th>WhatsApp</th>
+                                 <th>Asistencia</th>
+                                 <th>Pases</th>
+                                 <th>Acción</th>
+                             </tr>
+                        </thead>
+                        <tbody id="guest-list-body">
+                            <!-- JS will populate -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="admin-actions mt-3">
+                    <button id="btn-clear-guests" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Borrar Todo</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>

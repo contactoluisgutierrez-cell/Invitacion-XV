@@ -1,0 +1,1641 @@
+/* --------------------------------------------------
+   CÓDIGO CSS - INVITACIÓN DE XV AÑOS DE ALTO DISEÑO
+   XIMENA BLANCO CASTILLO - 2026
+-------------------------------------------------- */
+
+:root {
+    /* Paleta Premium */
+    --primary-pastel: #fce4df;   /* Rosa Pastel suave */
+    --primary-cream: #fdfaf7;    /* Fondo crema mate */
+    --primary-dark: #b88b88;     /* Rosa viejo / Muted Rose */
+    --gold-light: #f9e29c;       /* Oro Champaña */
+    --gold-accent: #d4af37;      /* Oro Clásico */
+    --gold-dark: #99781b;        /* Oro Viejo */
+    --gold-gradient: linear-gradient(135deg, #f9e29c 0%, #d4af37 50%, #b8860b 100%);
+    --rose-gold-gradient: linear-gradient(135deg, #fdf1ef 0%, #fbcbc9 60%, #cf8d8b 100%);
+    --dark-editorial: #2c2525;   /* Negro Editorial / Charcoal */
+    --text-muted: #736262;       /* Café Muted */
+    --glass-card: rgba(255, 255, 255, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.45);
+    
+    /* Configuración de Layout */
+    --shadow-soft: 0 10px 30px rgba(184, 139, 136, 0.12);
+    --shadow-luxury: 0 25px 65px rgba(44, 37, 37, 0.1);
+    --transition-editorial: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    --border-radius-lg: 30px;
+    --border-radius-md: 18px;
+}
+
+/* Reset y Bases Editoriales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--dark-editorial);
+    background-color: var(--primary-cream);
+    line-height: 1.7;
+    overflow-x: hidden;
+}
+
+/* Textos de Lujo */
+h1, h2, h3, h4, .font-cinzel {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 2px;
+}
+
+.quinceanera-name {
+    font-family: 'Pinyon Script', cursive;
+    font-weight: 400;
+}
+
+/* Fondo decorativo sutil */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(circle at 10% 10%, rgba(252, 228, 223, 0.45) 0%, transparent 40%),
+                      radial-gradient(circle at 90% 90%, rgba(249, 226, 156, 0.25) 0%, transparent 45%);
+    z-index: -10;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------
+   1. APERTURA DE SOBRE VIRTUAL (WAX SEAL INTRO)
+-------------------------------------------------- */
+.envelope-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #f4eae7;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1), 
+                visibility 1s cubic-bezier(0.19, 1, 0.22, 1);
+    overflow: hidden;
+}
+
+.envelope-container {
+    position: relative;
+    width: 500px;
+    height: 380px;
+    background: #faf4f2;
+    border-radius: 8px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Flaps / Folds */
+.envelope-flap {
+    position: absolute;
+    width: 0; height: 0;
+    border-style: solid;
+    z-index: 2;
+    transition: var(--transition-editorial);
+}
+
+.flap-top {
+    top: 0; left: 0;
+    border-width: 190px 250px 0 250px;
+    border-color: #eee1dd transparent transparent transparent;
+    transform-origin: top;
+}
+
+.flap-bottom {
+    bottom: 0; left: 0;
+    border-width: 0 250px 190px 250px;
+    border-color: transparent transparent #faf4f2 transparent;
+    z-index: 3;
+}
+
+.flap-left {
+    top: 0; left: 0;
+    border-width: 190px 0 190px 250px;
+    border-color: transparent transparent transparent #eadeda;
+    z-index: 3;
+}
+
+.flap-right {
+    top: 0; right: 0;
+    border-width: 190px 250px 190px 0;
+    border-color: transparent #eadeda transparent transparent;
+    z-index: 3;
+}
+
+/* Card Inside */
+.envelope-card-inside {
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    background: white;
+    border-radius: 4px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+    border: 1px solid #f2e3e1;
+    transform: translateY(0);
+    transition: var(--transition-editorial);
+}
+
+.envelope-greeting {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
+
+.envelope-invite-text {
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* 3D Wax Seal Button */
+.wax-seal-btn {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, #e05e5e 0%, #a82020 100%);
+    border-radius: 50%;
+    z-index: 100;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(168, 32, 32, 0.4),
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                inset 0 -4px 8px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #9c1515;
+}
+
+.wax-seal-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 35px rgba(168, 32, 32, 0.55);
+}
+
+.wax-seal-inner {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.wax-monogram {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #f7e6a1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.click-prompt {
+    position: absolute;
+    bottom: -40px;
+    width: 150px;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary-dark);
+    font-weight: 600;
+    animation: pulseText 2s infinite;
+}
+
+@keyframes pulseText {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Envelope Open Animation Triggered in JS */
+.envelope-overlay.opened {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.envelope-overlay.opened-flaps .flap-top {
+    transform: rotateX(180deg) translateY(-2px);
+    z-index: 1;
+}
+
+.envelope-overlay.opened-flaps .envelope-card-inside {
+    transform: translateY(-110px);
+    z-index: 5;
+}
+
+.envelope-overlay.opened-flaps .wax-seal-btn {
+    transform: scale(0);
+    opacity: 0;
+}
+
+/* --------------------------------------------------
+   2. HERO Y CONTENIDO DE LA INVITACIÓN
+-------------------------------------------------- */
+.invitation-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    transition: filter 0.8s ease;
+}
+
+.invitation-container.blurred {
+    filter: blur(10px);
+}
+
+.hero-section {
+    position: relative;
+    height: 100vh;
+    min-height: 650px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+    background-image: url('assets/hero-bg.png');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(253, 250, 247, 0.72) 0%, rgba(255, 255, 255, 0.82) 100%);
+    z-index: 1;
+}
+
+.hero-sparkles {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    padding: 20px;
+    max-width: 800px;
+}
+
+/* Monograma en Hero */
+.monogram-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    animation: scaleUpMonogram 2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.monogram-svg {
+    width: 85px;
+    height: 85px;
+    filter: drop-shadow(0 4px 10px rgba(212, 175, 55, 0.22));
+}
+
+@keyframes scaleUpMonogram {
+    0% { opacity: 0; transform: scale(0.7) rotate(-15deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: var(--primary-dark);
+    font-weight: 500;
+}
+
+.quinceanera-name {
+    font-size: 6.5rem;
+    line-height: 1;
+    margin: 15px 0;
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(212,175,55,0.12));
+}
+
+.hero-subtitle-details {
+    font-size: 2.2rem;
+    font-weight: 500;
+    letter-spacing: 10px;
+    color: var(--dark-editorial);
+    text-transform: uppercase;
+}
+
+/* Cuenta Regresiva */
+.countdown-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.countdown-item {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    width: 85px;
+    height: 85px;
+    border-radius: 50%;
+    border: 1px solid var(--primary-pastel);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-soft);
+}
+
+.time-num {
+    font-family: 'Cinzel', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.time-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: -2px;
+}
+
+/* Scroll down */
+.scroll-indicator {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary-dark);
+}
+
+.scroll-text {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.scroll-arrow {
+    font-size: 1rem;
+    animation: bounceIndicator 2s infinite;
+}
+
+@keyframes bounceIndicator {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
+}
+
+/* --------------------------------------------------
+   3. SECCIÓN DE BIENVENIDA Y PADRES
+-------------------------------------------------- */
+.welcome-section .card {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 50px;
+    position: relative;
+}
+
+.welcome-icon {
+    font-size: 1.8rem;
+    color: var(--primary-dark);
+    margin-bottom: 20px;
+}
+
+.welcome-quote {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--dark-editorial);
+    line-height: 1.8;
+}
+
+.family-host-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.family-col strong {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    color: var(--primary-dark);
+    display: block;
+    margin-bottom: 12px;
+}
+
+.parents-names {
+    font-size: 1rem;
+    color: var(--dark-editorial);
+    font-weight: 500;
+}
+
+/* --------------------------------------------------
+   4. CRONOGRAMA INTERACTIVO (TIMELINE)
+-------------------------------------------------- */
+.timeline-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.timeline-container {
+    position: relative;
+    padding: 40px 0;
+}
+
+.timeline-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--primary-dark) 10%, var(--primary-dark) 90%, transparent);
+    transform: translateX(-50%);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 60px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-cream);
+    border: 2px solid var(--primary-dark);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    color: var(--primary-dark);
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.timeline-content {
+    width: 42%;
+    padding: 25px;
+    position: relative;
+    transition: var(--transition-editorial);
+}
+
+.timeline-item:nth-child(odd) .timeline-content {
+    margin-right: auto;
+    text-align: right;
+}
+
+.timeline-item:nth-child(even) .timeline-content {
+    margin-left: auto;
+    text-align: left;
+}
+
+.timeline-time {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.timeline-content h3 {
+    font-size: 1.15rem;
+    color: var(--dark-editorial);
+    margin-bottom: 8px;
+}
+
+.timeline-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------
+   5. TARJETAS DE EVENTO E INTERACTIVOS DE MAPAS
+-------------------------------------------------- */
+.events-section {
+    width: 100%;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 40px;
+}
+
+.event-card {
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-img-container {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.event-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: var(--transition-editorial);
+}
+
+.event-card:hover .event-img {
+    transform: scale(1.06);
+}
+
+.event-badge {
+    position: absolute;
+    top: 20px; left: 20px;
+    background: var(--rose-gold-gradient);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.event-body {
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.event-body h3 {
+    font-size: 1.4rem;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+}
+
+.event-time {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    color: var(--accent-gold);
+    font-size: 1.15rem;
+    margin-bottom: 15px;
+}
+
+.venue-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.event-address {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+.map-container {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    border: 1px solid #f2e3e1;
+    margin-bottom: 25px;
+}
+
+.button-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: auto;
+}
+
+/* --------------------------------------------------
+   6. CÓDIGO DE VESTIMENTA Y MOODBOARD
+-------------------------------------------------- */
+.dress-code-section .card {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 55px;
+}
+
+.dress-icon {
+    font-size: 2.8rem;
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+}
+
+.dress-style {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--dark-editorial);
+}
+
+.color-alert-box {
+    background: rgba(252, 228, 223, 0.55);
+    border-left: 3px solid var(--primary-dark);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 30px 0;
+    display: flex;
+    gap: 15px;
+    text-align: left;
+    align-items: center;
+}
+
+.alert-icon {
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+}
+
+.alert-text {
+    font-size: 0.85rem;
+    color: #5c4241;
+}
+
+/* Moodboard Paleta de Diseño */
+.moodboard-container {
+    margin-top: 25px;
+}
+
+.moodboard-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    color: var(--dark-editorial);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.moodboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.mood-item {
+    height: 90px;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow-soft);
+    border: 2px solid white;
+}
+
+.color-gold { background: linear-gradient(to top, rgba(0,0,0,0.3), transparent), #dfcc96; }
+.color-emerald { background: linear-gradient(to top, rgba(0,0,0,0.3), transparent), #1e5631; }
+.color-navy { background: linear-gradient(to top, rgba(0,0,0,0.3), transparent), #122240; }
+.color-lavender { background: linear-gradient(to top, rgba(0,0,0,0.3), transparent), #baa6c9; }
+
+.color-bubbles {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.color-bubble {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: var(--shadow-soft);
+}
+
+.color-bubble i {
+    color: #682622;
+    font-size: 1.1rem;
+}
+
+.pastel-pink-reserved { background-color: #fbcbc9; }
+.light-pink-reserved { background-color: #ffd8d6; }
+
+/* --------------------------------------------------
+   7. SECCIÓN DE RSVP - BOLETO INTERACTIVO EN VIVO
+-------------------------------------------------- */
+.rsvp-grid-container {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 40px;
+    align-items: center;
+}
+
+.rsvp-form-container {
+    padding: 50px 40px;
+}
+
+.rsvp-header-text {
+    text-align: center;
+}
+
+.rsvp-icon {
+    font-size: 2.8rem;
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+}
+
+.rsvp-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.rsvp-form {
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.form-group label i {
+    color: var(--primary-dark);
+    margin-right: 5px;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(184, 139, 136, 0.35);
+    background: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition-editorial);
+}
+
+.form-group input[type="text"]:focus {
+    border-color: var(--primary-dark);
+    box-shadow: 0 0 10px rgba(184, 139, 136, 0.15);
+}
+
+/* Counter Widget */
+.guest-counter {
+    display: flex;
+    align-items: center;
+    max-width: 180px;
+    border: 1px solid rgba(184, 139, 136, 0.35);
+    border-radius: var(--border-radius-md);
+    background: white;
+    overflow: hidden;
+    height: 50px;
+}
+
+.counter-btn {
+    width: 55px; height: 100%;
+    background: none; border: none;
+    cursor: pointer;
+    color: var(--primary-dark);
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition-editorial);
+}
+
+.counter-btn:hover { background: #fdf6f5; }
+
+.counter-val {
+    flex-grow: 1;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.counter-info {
+    display: block; margin-top: 6px;
+    font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* Radios custom */
+.attendance-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.attendance-radio {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; position: relative;
+}
+
+.attendance-radio input {
+    position: absolute; opacity: 0;
+}
+
+.radio-design {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-dark);
+    background: white;
+    display: inline-block;
+    position: relative;
+    transition: var(--transition-editorial);
+}
+
+.attendance-radio input:checked ~ .radio-design {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.attendance-radio input:checked ~ .radio-design::after {
+    content: "";
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+.radio-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* --------------------------------------------------
+   8. DISEÑO DEL BOLETO EN VIVO (LIVE TICKET)
+-------------------------------------------------- */
+.ticket-preview-container {
+    display: flex;
+    justify-content: center;
+}
+
+.live-ticket {
+    display: flex;
+    width: 320px;
+    height: 480px;
+    background: #fffefd;
+    border: 1px solid #eadeda;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(44, 37, 37, 0.08);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Stub Izquierdo (Talonario) */
+.ticket-stub {
+    width: 65px;
+    background: var(--rose-gold-gradient);
+    border-right: 2px dashed #eadeda;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.stub-circle-top, .stub-circle-bottom {
+    position: absolute;
+    width: 20px; height: 20px;
+    background: var(--primary-cream);
+    border-radius: 50%;
+    z-index: 10;
+    border: 1px solid #eadeda;
+}
+
+.stub-circle-top { top: -11px; right: -11px; }
+.stub-circle-bottom { bottom: -11px; right: -11px; }
+
+.ticket-stub-inner {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 80%;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.stub-event {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.stub-monogram {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.stub-date {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    font-weight: 500;
+}
+
+/* Cuerpo del Boleto */
+.ticket-body {
+    flex-grow: 1;
+    padding: 30px 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.ticket-header-title {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: block;
+}
+
+.ticket-quinceanera {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-top: 4px;
+    letter-spacing: 1px;
+}
+
+.ticket-divider {
+    height: 1px;
+    background: #f2e3e1;
+    margin: 15px 0;
+}
+
+.ticket-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.info-val {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dark-editorial);
+    margin-top: 2px;
+}
+
+.info-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ticket-barcode-area {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.barcode-graphic {
+    height: 35px;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.barcode-graphic span {
+    flex-grow: 1;
+    background: var(--dark-editorial);
+    opacity: 0.8;
+}
+
+.barcode-graphic span:nth-child(3n) { width: 4px; }
+.barcode-graphic span:nth-child(4n) { width: 1px; opacity: 0.3; }
+
+/* 3D Wax Stamp - CONFIRMADO */
+.ticket-wax-stamp {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    width: 130px; height: 130px;
+    background: radial-gradient(circle, #e05e5e 0%, #a82020 100%);
+    border-radius: 50%;
+    box-shadow: 0 10px 30px rgba(168, 32, 32, 0.4),
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                inset 0 -4px 8px rgba(0,0,0,0.3);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #9c1515;
+    animation: stampBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.stamp-inner {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.25);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.stamp-inner span {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f7e6a1;
+    letter-spacing: 1px;
+    transform: rotate(-15deg);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+@keyframes stampBounce {
+    0% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* --------------------------------------------------
+   9. ELEMENTOS DE VIDRIO (GLASSMORPHISM CARDS)
+-------------------------------------------------- */
+.glass-card {
+    background: var(--glass-card);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-luxury);
+    transition: var(--transition-editorial);
+}
+
+.glass-card:hover {
+    box-shadow: 0 30px 80px rgba(184, 139, 136, 0.18);
+}
+
+/* Decoraciones en Esquinas de Tarjetas */
+.decor-corner {
+    position: absolute;
+    width: 25px; height: 25px;
+    border: 2px solid transparent;
+    pointer-events: none;
+}
+
+.decor-top-left { top: 15px; left: 15px; border-top-color: var(--primary-dark); border-left-color: var(--primary-dark); }
+.decor-top-right { top: 15px; right: 15px; border-top-color: var(--primary-dark); border-right-color: var(--primary-dark); }
+.decor-bottom-left { bottom: 15px; left: 15px; border-bottom-color: var(--primary-dark); border-left-color: var(--primary-dark); }
+.decor-bottom-right { bottom: 15px; right: 15px; border-bottom-color: var(--primary-dark); border-right-color: var(--primary-dark); }
+
+/* --------------------------------------------------
+   10. CONTROLES DE MÚSICA Y VISTA DEL SISTEMA
+-------------------------------------------------- */
+.audio-control-container {
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 1000;
+    display: flex; align-items: center; gap: 10px;
+}
+
+.music-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--primary-dark);
+    color: var(--primary-dark);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    backdrop-filter: blur(5px);
+    transition: var(--transition-editorial);
+}
+
+.music-btn:hover {
+    transform: scale(1.08);
+    background: var(--rose-gold-gradient);
+    color: white;
+}
+
+.music-btn.playing {
+    animation: spinVinyl 6s linear infinite;
+    background: var(--rose-gold-gradient);
+    color: white;
+    box-shadow: 0 0 15px rgba(224, 154, 166, 0.35);
+}
+
+@keyframes spinVinyl {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.music-tooltip {
+    background: var(--dark-editorial);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-editorial);
+    white-space: nowrap;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.audio-control-container:hover .music-tooltip {
+    opacity: 0.9;
+}
+
+/* --------------------------------------------------
+   11. PANTALLA DE SEGURIDAD (LOCK SCREEN)
+-------------------------------------------------- */
+.lock-screen-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: radial-gradient(circle at 50% 50%, rgba(254, 240, 240, 0.95) 0%, rgba(251, 203, 201, 0.98) 100%);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    opacity: 1;
+}
+
+.lock-screen-overlay.unlocked {
+    opacity: 0;
+    transform: scale(1.04);
+    pointer-events: none;
+}
+
+.lock-card {
+    max-width: 420px;
+    width: 90%;
+    padding: 45px 35px;
+    border: 1px solid var(--primary-pastel);
+}
+
+.lock-monogram {
+    display: flex; justify-content: center; margin-bottom: 15px;
+}
+
+.lock-icon-main {
+    font-size: 2.2rem;
+    color: var(--accent-gold);
+    margin-bottom: 15px;
+    display: block;
+}
+
+.lock-instruction {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+.lock-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#lock-password {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(184, 139, 136, 0.4);
+    outline: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+#lock-password:focus {
+    border-color: var(--primary-dark);
+}
+
+.lock-error {
+    color: #c62828;
+    font-size: 0.8rem;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------
+   12. BOTONES Y AJUSTES DE DISEÑO GENERAL
+-------------------------------------------------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-editorial);
+}
+
+.btn-icon i {
+    margin-right: 8px;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: var(--rose-gold-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(224, 154, 166, 0.35);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(224, 154, 166, 0.55);
+}
+
+.btn-secondary {
+    background: #f0e6e4;
+    color: var(--dark-editorial);
+}
+
+.btn-secondary:hover {
+    background: #e2d5d3;
+}
+
+.btn-danger {
+    background: #d32f2f;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #b71c1c;
+}
+
+.btn-sm {
+    padding: 10px 20px;
+    font-size: 0.75rem;
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--primary-dark), transparent);
+    width: 60%;
+    margin: 25px auto;
+}
+
+.mt-5 { margin-top: 3rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.btn-block { width: 100%; display: block; }
+.hidden { display: none !important; }
+.max-w-md { max-width: 450px; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.section-padding {
+    padding: 110px 0; /* Generous luxury breathing room between sections */
+}
+
+/* Scroll reveal class in JS */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1), 
+                transform 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --------------------------------------------------
+   13. PIE DE PÁGINA Y CAJÓN ADMINISTRADOR
+-------------------------------------------------- */
+.footer {
+    padding: 80px 0;
+}
+
+.footer-thankyou {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-style: italic;
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+}
+
+.footer-signature {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.admin-btn {
+    background: none; border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: var(--transition-editorial);
+}
+
+.admin-btn:hover {
+    color: var(--primary-dark);
+}
+
+/* Drawer Administrador */
+.admin-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: 100%; max-width: 500px;
+    height: 100%;
+    z-index: 2500;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.12);
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    transform: translateX(100%);
+    display: flex;
+}
+
+.admin-drawer:not(.hidden) {
+    transform: translateX(0);
+}
+
+.admin-drawer-content {
+    background: white;
+    width: 100%; height: 100%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0; border: none;
+}
+
+.admin-drawer-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #f2e3e1;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.admin-drawer-header h3 {
+    font-size: 1.1rem;
+    color: var(--primary-dark);
+}
+
+.close-btn {
+    background: none; border: none;
+    font-size: 2.2rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: var(--primary-dark);
+}
+
+.admin-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.summary-box {
+    background: var(--primary-cream);
+    border: 1px solid rgba(184, 139, 136, 0.15);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+}
+
+.summary-num {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.summary-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.admin-list-wrapper {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.admin-table th {
+    border-bottom: 2px solid #f2e3e1;
+    padding: 10px 5px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.admin-table td {
+    padding: 12px 5px;
+    border-bottom: 1px solid #fdf6f5;
+}
+
+.btn-delete-row {
+    background: none; border: none;
+    color: #d32f2f;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-delete-row:hover {
+    transform: scale(1.15);
+}
+
+/* --------------------------------------------------
+   14. VISTA DE IMPRESIÓN DEL BOLETO (PRINT CONFIG)
+-------------------------------------------------- */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #lock-screen, .audio-control-container, .invitation-container, .invitation-container * {
+        display: none !important;
+    }
+    #envelope-wrapper, #envelope-wrapper * {
+        display: none !important;
+    }
+    #rsvp-success-msg, #rsvp-success-msg * {
+        display: block !important;
+        visibility: visible !important;
+    }
+    .live-ticket, .live-ticket * {
+        visibility: visible !important;
+        display: block !important;
+    }
+    .live-ticket {
+        position: absolute;
+        left: 50%;
+        top: 5%;
+        transform: translateX(-50%) scale(1.1);
+        width: 320px;
+        box-shadow: none;
+        border: 2px solid #000 !important;
+        background: white !important;
+    }
+    .ticket-stub {
+        border-right: 2px dashed #000 !important;
+        background: #fdfdfd !important;
+        color: #000 !important;
+    }
+    .stub-circle-top, .stub-circle-bottom {
+        background: white !important;
+        border: 1.5px solid #000 !important;
+    }
+    #rsvp-success-msg h3, #rsvp-success-msg p, #rsvp-success-msg #success-action-buttons, #rsvp-success-msg #btn-reset-form {
+        display: none !important;
+    }
+}
+
+/* --------------------------------------------------
+   15. AJUSTES RESPONSIVOS (MOBILE OPTIMIZATIONS)
+-------------------------------------------------- */
+@media (max-width: 992px) {
+    .rsvp-grid-container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .ticket-preview-container {
+        order: -1; /* Muestra el boleto arriba del formulario en móviles */
+    }
+}
+
+@media (max-width: 768px) {
+    .section-padding {
+        padding: 70px 0; /* Balanced breathing room on mobile devices */
+    }
+    
+    .quinceanera-name {
+        font-size: 4.5rem;
+    }
+    
+    .hero-subtitle-details {
+        font-size: 1.6rem;
+        letter-spacing: 6px;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .welcome-quote {
+        font-size: 1.25rem;
+    }
+
+    .welcome-section .card {
+        padding: 40px 25px;
+    }
+
+    .family-host-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* Ajuste de Timeline en móviles */
+    .timeline-line {
+        left: 20px;
+    }
+    
+    .timeline-dot {
+        left: 20px;
+    }
+    
+    .timeline-content {
+        width: calc(100% - 50px);
+        margin-left: 50px !important;
+        margin-right: 0 !important;
+        text-align: left !important;
+    }
+    
+    .envelope-container {
+        width: 90%;
+        height: 290px;
+    }
+    
+    .flap-top { border-width: 145px 225px 0 225px; }
+    .flap-bottom { border-width: 0 225px 145px 225px; }
+    .flap-left { border-width: 145px 0 145px 225px; }
+    .flap-right { border-width: 145px 225px 145px 0; }
+    
+    .moodboard-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .mood-item {
+        height: 75px;
+    }
+}
