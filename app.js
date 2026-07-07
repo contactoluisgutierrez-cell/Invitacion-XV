@@ -2,11 +2,13 @@
 const TARGET_DATE = new Date('August 29, 2026 15:00:00').getTime();
 const WHATSAPP_PHONE = "524427389456"; // Número para confirmación oficial de la tía
 
-// Datos iniciales de demostración para el panel de invitados
+// Clave única para el almacenamiento compartido en la nube
+const DB_KEY = "ayknna2s"; 
+
+// Datos iniciales de demostración para inicializar base de datos
 const DEFAULT_GUESTS = [
-    { id: 1, name: "Familia Cazarin Blanco", attendance: "si", count: 4, code: "XV-2983", phone: "4421111111", status: "aprobado" },
-    { id: 2, name: "Tía Alicia y Tío Roberto", attendance: "si", count: 2, code: "XV-9012", phone: "4422222222", status: "aprobado" },
-    { id: 3, name: "Sr. Luis Pérez", attendance: "pendiente", count: 0, code: "XV-4512", phone: "4423333333", status: "pendiente" }
+    { id: 101, name: "Familia Cazarin Blanco", attendance: "si", count: 4, code: "XV-2983", phone: "4421111111", status: "aprobado" },
+    { id: 102, name: "Tía Alicia y Tío Roberto", attendance: "si", count: 2, code: "XV-9012", phone: "4422222222", status: "aprobado" }
 ];
 
 // Inicialización
@@ -22,6 +24,89 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAccess(); // Control de acceso y visualización de pases
 });
 
+// --- FUNCIONES DE BASE DE DATOS EN LA NUBE (HTTP REST) ---
+
+// Obtener lista de IDs de invitados
+async function dbGetGuestIds() {
+    try {
+        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest_ids`);
+        if (!response.ok) return [];
+        const text = await response.text();
+        const cleaned = text.trim().replace(/^"|"$/g, '');
+        if (!cleaned) return [];
+        return cleaned.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+    } catch (e) {
+        console.error("Error al obtener IDs de la nube:", e);
+        return [];
+    }
+}
+
+// Guardar lista de IDs de invitados
+async function dbSaveGuestIds(ids) {
+    try {
+        const idsStr = ids.join(',');
+        await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest_ids/${idsStr}`, { method: 'POST' });
+    } catch (e) {
+        console.error("Error al guardar IDs en la nube:", e);
+    }
+}
+
+// Obtener datos de un invitado individual
+async function dbGetGuest(id) {
+    try {
+        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest-${id}`);
+        if (!response.ok) return null;
+        const text = await response.text();
+        const cleaned = text.trim().replace(/^"|"$/g, '');
+        if (!cleaned) return null;
+        
+        // Decodificar Base64 URL-safe a JSON string
+        const padding = cleaned.length % 4;
+        let b64 = cleaned;
+        if (padding === 2) b64 += "==";
+        else if (padding === 3) b64 += "=";
+        const restoredB64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonStr = decodeURIComponent(escape(atob(restoredB64)));
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        console.error(`Error al obtener invitado ${id} de la nube:`, e);
+        return null;
+    }
+}
+
+// Guardar/Actualizar datos de un invitado individual
+async function dbSaveGuest(guest) {
+    try {
+        const jsonStr = JSON.stringify(guest);
+        // Codificar a Base64 URL-safe
+        const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest-${guest.id}/${safeB64}`, { method: 'POST' });
+    } catch (e) {
+        console.error(`Error al guardar invitado ${guest.id} en la nube:`, e);
+    }
+}
+
+// Inicializar base de datos en la nube si está vacía
+async function dbInitIfEmpty() {
+    try {
+        const ids = await dbGetGuestIds();
+        if (ids.length === 0) {
+            console.log("Inicializando base de datos en la nube...");
+            const initialIds = [];
+            for (const guest of DEFAULT_GUESTS) {
+                initialIds.push(guest.id);
+                await dbSaveGuest(guest);
+            }
+            await dbSaveGuestIds(initialIds);
+        }
+    } catch (e) {
+        console.error("Error al inicializar base de datos:", e);
+    }
+}
+
+// --- LÓGICA DE LA APLICACIÓN ---
+
 // 1. Apertura del Sobre Virtual (Envelope Intro)
 function initEnvelope() {
     const waxSeal = document.getElementById('wax-seal');
@@ -31,13 +116,10 @@ function initEnvelope() {
     if (!waxSeal || !envelopeWrapper) return;
 
     waxSeal.addEventListener('click', () => {
-        // Reproducir un sonido de papel/sello sutil
         playClickSound();
 
-        // 1. Iniciar animación de apertura de pestañas
         envelopeWrapper.classList.add('opened-flaps');
         
-        // 2. Ocultar el sobre completo y revelar contenido
         setTimeout(() => {
             envelopeWrapper.classList.add('opened');
             mainContent.classList.remove('blurred');
@@ -100,13 +182,12 @@ function initCountdown() {
     setInterval(updateCountdown, 1000);
 }
 
-// 3. Contador de Invitados (Mantener para soporte de DOM pero sin uso visual)
+// 3. Contador de Invitados (Soporte DOM de Nombre)
 function initGuestCounter() {
     const guestNameInput = document.getElementById('guest-name');
     const ticketNameEl = document.getElementById('ticket-guest-name');
     const ticketCountEl = document.getElementById('ticket-guest-count');
     
-    // Al escribir el nombre se actualiza el boleto en vivo
     if (guestNameInput && ticketNameEl) {
         guestNameInput.addEventListener('input', (e) => {
             const val = e.target.value.trim();
@@ -114,7 +195,6 @@ function initGuestCounter() {
         });
     }
 
-    // Pre-llenar nombre desde URL si se proporciona
     const urlParams = new URLSearchParams(window.location.search);
     const nameParam = urlParams.get('name');
     if (guestNameInput && nameParam) {
@@ -124,7 +204,7 @@ function initGuestCounter() {
     }
 }
 
-// 4. Formulario de RSVP (Flujo: Registro en espera de aprobación)
+// 4. Formulario de RSVP (Registro en espera)
 function initRsvpForm() {
     const form = document.getElementById('rsvp-form');
     const successMsg = document.getElementById('rsvp-success-msg');
@@ -138,7 +218,7 @@ function initRsvpForm() {
 
     if (!form) return;
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const name = document.getElementById('guest-name').value.trim();
@@ -148,26 +228,24 @@ function initRsvpForm() {
 
         if (!name || !phone) return;
 
-        // Generar un código único de pase
+        // Generar código único y ID de timestamp
         const uniqueCode = 'XV-' + Math.floor(1000 + Math.random() * 9000);
+        const newId = Date.now();
 
-        // Actualizar datos del boleto en vivo (pases quedan en Pendiente)
+        // Actualizar UI del boleto en vivo
         if (ticketCodeEl) ticketCodeEl.innerText = uniqueCode;
         if (ticketCountEl) ticketCountEl.innerText = "Pendiente";
 
-        // Guardar localmente con estado "pendiente" y pases a 0
-        saveGuestLocal(name, attendanceVal, 0, uniqueCode, phone, 'pendiente');
-
-        // Configurar la interfaz de éxito en modo "Espera"
+        // Configurar pantalla de éxito en modo "Espera"
         document.getElementById('success-status-title').innerText = "¡Registro en Proceso!";
         document.getElementById('success-status-desc').innerText = "Tu solicitud ha sido enviada. Tu pase digital te llegará por WhatsApp en cuanto la organizadora asigne tus pases.";
         
         const actionButtonsBlock = document.getElementById('success-action-buttons');
         if (actionButtonsBlock) {
-            actionButtonsBlock.classList.add('hidden'); // Ocultar botones de PDF y auto-envío de WhatsApp
+            actionButtonsBlock.classList.add('hidden');
         }
 
-        // WhatsApp para la tía (solicitando asignación de pases)
+        // WhatsApp para la tía (solicitando pases)
         const attendanceText = attendanceVal === 'si' ? 'Sí, deseo asistir' : 'Lo sentimos, no podré asistir';
         const hostMessage = `¡Hola! Me he registrado en la invitación web para los *XV Años de Ximena Blanco Castillo* 🌸\n\n` +
                             `👤 *Nombre/Familia:* ${name}\n` +
@@ -178,29 +256,45 @@ function initRsvpForm() {
         const encodedHostMessage = encodeURIComponent(hostMessage);
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodedHostMessage}`;
 
-        // Mover el boleto al placeholder de éxito
+        // Mover el boleto al placeholder final
         if (placeholder && liveTicket) {
             placeholder.appendChild(liveTicket);
         }
         
-        // Ocultar formulario, mostrar pantalla de éxito
+        // Ocultar formulario, mostrar éxito
         document.querySelector('.rsvp-grid-container').classList.add('hidden');
         successMsg.classList.remove('hidden');
 
-        // Redireccionar al WhatsApp de la tía después de un delay
-        setTimeout(() => {
-            window.open(whatsappUrl, '_blank');
-        }, 1200);
+        // Redireccionar de inmediato a WhatsApp de forma directa (seguro para Android y iOS)
+        window.location.href = whatsappUrl;
+
+        // Guardar en segundo plano a la nube para no retrasar la redirección
+        try {
+            const guestObj = {
+                id: newId,
+                name: name,
+                attendance: attendanceVal,
+                count: 0,
+                code: uniqueCode,
+                phone: phone,
+                status: 'pendiente'
+            };
+            await dbSaveGuest(guestObj);
+            
+            const ids = await dbGetGuestIds();
+            ids.push(newId);
+            await dbSaveGuestIds(ids);
+        } catch (err) {
+            console.error("Error al registrar en la nube:", err);
+        }
     });
 
-    // Guardar/Descargar Pase en PDF con la función de impresión nativa (robusta y compatible con file://)
     if (btnDownload) {
         btnDownload.addEventListener('click', () => {
             window.print();
         });
     }
 
-    // Resetear formulario
     if (btnReset) {
         btnReset.addEventListener('click', () => {
             const ticketContainer = document.querySelector('.ticket-preview-container');
@@ -220,27 +314,6 @@ function initRsvpForm() {
             successMsg.classList.add('hidden');
             document.querySelector('.rsvp-grid-container').classList.remove('hidden');
         });
-    }
-}
-
-function playStampSound() {
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(90, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        
-        oscillator.start();
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-        oscillator.stop(audioCtx.currentTime + 0.25);
-    } catch (e) {
-        console.log(e);
     }
 }
 
@@ -287,38 +360,22 @@ function initScrollReveal() {
     reveals.forEach(el => observer.observe(el));
 }
 
-// 7. Base de Datos Local (localStorage)
-function saveGuestLocal(name, attendance, count, code, phone, status = 'pendiente') {
-    let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-    const newGuest = {
-        id: Date.now(),
-        name: name,
-        attendance: attendance,
-        count: count,
-        code: code,
-        phone: phone || '',
-        status: status
-    };
-    guests.push(newGuest);
-    localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-    renderGuestList();
-}
-
-// 8. Panel de Administración (La Tía)
+// 7. Panel de Administración (La Tía)
 function initAdminPanel() {
     const adminToggle = document.getElementById('admin-toggle-btn');
     const adminDrawer = document.getElementById('admin-drawer');
     const adminClose = document.getElementById('admin-close-btn');
     const btnClear = document.getElementById('btn-clear-guests');
+    const btnToggleAdd = document.getElementById('btn-toggle-add-guest');
+    const addGuestForm = document.getElementById('admin-add-guest-form');
 
-    if (!localStorage.getItem('guests_rsvp')) {
-        localStorage.setItem('guests_rsvp', JSON.stringify(DEFAULT_GUESTS));
-    }
+    // Inicializar DB en la nube si es nueva
+    dbInitIfEmpty();
 
     if (adminToggle) {
-        adminToggle.addEventListener('click', () => {
+        adminToggle.addEventListener('click', async () => {
             adminDrawer.classList.remove('hidden');
-            renderGuestList();
+            await syncAndLoadGuests();
         });
     }
 
@@ -329,16 +386,98 @@ function initAdminPanel() {
     }
 
     if (btnClear) {
-        btnClear.addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados?')) {
+        btnClear.addEventListener('click', async () => {
+            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados de la nube?')) {
+                const loadingEl = document.getElementById('admin-loading');
+                if (loadingEl) loadingEl.classList.remove('hidden');
+                
+                await dbSaveGuestIds([]);
                 localStorage.setItem('guests_rsvp', JSON.stringify([]));
+                
+                if (loadingEl) loadingEl.classList.add('hidden');
                 renderGuestList();
+            }
+        });
+    }
+
+    // Toggle para desplegar registro manual
+    if (btnToggleAdd && addGuestForm) {
+        btnToggleAdd.addEventListener('click', () => {
+            addGuestForm.classList.toggle('hidden');
+        });
+    }
+
+    // Guardar registro manual directamente a la nube
+    if (addGuestForm) {
+        addGuestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('admin-new-name').value.trim();
+            const phone = document.getElementById('admin-new-phone').value.trim();
+
+            if (!name || !phone) return;
+
+            const loadingEl = document.getElementById('admin-loading');
+            if (loadingEl) loadingEl.classList.remove('hidden');
+
+            const uniqueCode = 'XV-' + Math.floor(1000 + Math.random() * 9000);
+            const newId = Date.now();
+
+            const newGuestObj = {
+                id: newId,
+                name: name,
+                attendance: 'si',
+                count: 2, // Pases por defecto
+                code: uniqueCode,
+                phone: phone,
+                status: 'pendiente'
+            };
+
+            try {
+                await dbSaveGuest(newGuestObj);
+                const ids = await dbGetGuestIds();
+                ids.push(newId);
+                await dbSaveGuestIds(ids);
+                
+                addGuestForm.reset();
+                addGuestForm.classList.add('hidden');
+                
+                await syncAndLoadGuests();
+            } catch (err) {
+                console.error("Error al registrar manualmente:", err);
+            } finally {
+                if (loadingEl) loadingEl.classList.add('hidden');
             }
         });
     }
 }
 
-// Renderizar la tabla del Administrador con el selector de pases y botón de Aprobación
+// Sincronizar de forma segura descargando todos los registros de la nube
+async function syncAndLoadGuests() {
+    const loadingEl = document.getElementById('admin-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
+    try {
+        const ids = await dbGetGuestIds();
+        const guests = [];
+        
+        // Carga paralela rápida
+        const promises = ids.map(id => dbGetGuest(id));
+        const fetched = await Promise.all(promises);
+        
+        fetched.forEach(g => {
+            if (g) guests.push(g);
+        });
+
+        localStorage.setItem('guests_rsvp', JSON.stringify(guests));
+    } catch (e) {
+        console.error("Error al sincronizar con la nube, usando cache local:", e);
+    } finally {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        renderGuestList();
+    }
+}
+
+// Renderizar la tabla con soporte de sincronización y botones
 function renderGuestList() {
     const guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
     const tableBody = document.getElementById('guest-list-body');
@@ -369,7 +508,6 @@ function renderGuestList() {
             totalFamilies++;
         }
 
-        // Columna de pases: Selector para pendientes, número estático para aprobados
         let pasesCol = '';
         let actionCol = '';
 
@@ -379,7 +517,7 @@ function renderGuestList() {
                 <button class="btn btn-primary btn-sm btn-approve-row" data-id="${guest.id}" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 30px; margin-bottom: 5px;">
                     <i class="fas fa-check"></i> Enviar Pase
                 </button>
-                <button class="btn-delete-row" data-id="${guest.id}" aria-label="Eliminar invitado" style="margin-left: 10px;">
+                <button class="btn-delete-row" data-id="${guest.id}" aria-label="Eliminar" style="margin-left: 10px;">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             `;
@@ -389,7 +527,7 @@ function renderGuestList() {
                 <button class="btn btn-sm btn-resend-row" data-id="${guest.id}" style="padding: 6px 12px; font-size: 0.7rem; border-radius: 30px; background: #25d366; color: white; margin-bottom: 5px;">
                     <i class="fab fa-whatsapp"></i> Reenviar
                 </button>
-                <button class="btn-delete-row" data-id="${guest.id}" aria-label="Eliminar invitado" style="margin-left: 10px;">
+                <button class="btn-delete-row" data-id="${guest.id}" aria-label="Eliminar" style="margin-left: 10px;">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             `;
@@ -408,17 +546,16 @@ function renderGuestList() {
     if (totalGuestsEl) totalGuestsEl.innerText = totalConfirmedPases;
     if (totalFamiliesEl) totalFamiliesEl.innerText = totalFamilies;
 
-    // Escuchar botones de Eliminar
+    // Conectar eventos de botones de la tabla
     tableBody.querySelectorAll('.btn-delete-row').forEach(btn => {
         btn.addEventListener('click', () => {
             const guestId = parseInt(btn.getAttribute('data-id'));
             if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
-                deleteGuestRow(guestId);
+                deleteGuestFromCloud(guestId);
             }
         });
     });
 
-    // Escuchar botones de Aprobar y Enviar
     tableBody.querySelectorAll('.btn-approve-row').forEach(btn => {
         btn.addEventListener('click', () => {
             const guestId = parseInt(btn.getAttribute('data-id'));
@@ -426,7 +563,6 @@ function renderGuestList() {
         });
     });
 
-    // Escuchar botones de Reenviar
     tableBody.querySelectorAll('.btn-resend-row').forEach(btn => {
         btn.addEventListener('click', () => {
             const guestId = parseInt(btn.getAttribute('data-id'));
@@ -435,25 +571,32 @@ function renderGuestList() {
     });
 }
 
-// Acción de aprobación y envío de link con pases encapsulados en URL
-function approveAndSendGuest(id) {
+// Acción de aprobación y guardado en la nube
+async function approveAndSendGuest(id) {
+    const loadingEl = document.getElementById('admin-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
     let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-    const guestIndex = guests.findIndex(g => g.id === id);
-    if (guestIndex === -1) return;
+    const idx = guests.findIndex(g => g.id === id);
+    if (idx === -1) return;
 
     const pasesInput = document.getElementById(`pases-input-${id}`);
     const pasesCount = pasesInput ? parseInt(pasesInput.value) : 2;
 
-    // Actualizar base de datos de la tía
-    guests[guestIndex].status = 'aprobado';
-    guests[guestIndex].count = pasesCount;
+    guests[idx].status = 'aprobado';
+    guests[idx].count = pasesCount;
     localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-    
-    // Re-renderizar panel
-    renderGuestList();
 
-    // Generar el mensaje y el link de bypass para el invitado
-    sendPassViaWhatsApp(guests[guestIndex], pasesCount);
+    try {
+        // Actualizar en la nube
+        await dbSaveGuest(guests[idx]);
+    } catch (err) {
+        console.error("Error al guardar aprobación en la nube:", err);
+    } finally {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        renderGuestList();
+        sendPassViaWhatsApp(guests[idx], pasesCount);
+    }
 }
 
 function resendGuestPass(id) {
@@ -464,15 +607,11 @@ function resendGuestPass(id) {
     sendPassViaWhatsApp(guest, guest.count);
 }
 
-// Función auxiliar para construir el link encriptado en URL y abrir WhatsApp al invitado
+// Enviar boleto abriendo directamente el chat de WhatsApp (100% compatible con móviles)
 function sendPassViaWhatsApp(guest, pasesCount) {
-    // URL base de la invitación
     const baseUrl = window.location.href.split('?')[0];
-    
-    // Link personalizado para el invitado conteniendo su pase digital completo en los parámetros
     const guestLink = `${baseUrl}?acceso=ximena&viewpass=true&name=${encodeURIComponent(guest.name)}&pases=${pasesCount}&code=${guest.code}&phone=${guest.phone}`;
 
-    // Mensaje para el invitado
     const message = `🎫 *TU PASE DE ACCESO DIGITAL OFICIAL - XV DE XIMENA BLANCO* 🌸\n\n` +
                     `¡Hola! Tu registro de asistencia ha sido aprobado y tus pases de acceso han sido asignados.\n\n` +
                     `👤 *Familia/Invitado:* ${guest.name}\n` +
@@ -480,20 +619,30 @@ function sendPassViaWhatsApp(guest, pasesCount) {
                     `🔑 *Código de Pase:* *${guest.code}*\n\n` +
                     `Puedes abrir, escanear y descargar tu boleto digital con código QR haciendo clic en el siguiente enlace:\n` +
                     `👉 ${guestLink}\n\n` +
-                    `¡Te esperamos con mucha ilusión para compartir este día mágico! ✨`;
+                    `¡Te esperamos con mucha emoción para compartir este día mágico! ✨`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=52${guest.phone}&text=${encodedMessage}`;
 
-    // Abrir WhatsApp dirigida al número del invitado para que la tía le mande el link
-    window.open(whatsappUrl, '_blank');
+    // Abrir de forma directa en la misma pestaña para asegurar la intercepción de la app de WhatsApp
+    window.location.href = whatsappUrl;
 }
 
-function deleteGuestRow(id) {
-    let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-    guests = guests.filter(guest => guest.id !== id);
-    localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-    renderGuestList();
+// Eliminar de la nube y re-sincronizar
+async function deleteGuestFromCloud(id) {
+    const loadingEl = document.getElementById('admin-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
+    try {
+        const ids = await dbGetGuestIds();
+        const updatedIds = ids.filter(guestId => guestId !== id);
+        await dbSaveGuestIds(updatedIds);
+        await syncAndLoadGuests();
+    } catch (err) {
+        console.error("Error al eliminar de la nube:", err);
+    } finally {
+        if (loadingEl) loadingEl.classList.add('hidden');
+    }
 }
 
 function escapeHTML(str) {
@@ -508,7 +657,7 @@ function escapeHTML(str) {
     );
 }
 
-// 9. Sistema de Control de Acceso y Renderizador de Pase Directo
+// 8. Sistema de Control de Acceso y Renderizador de Pase Directo
 function checkAccess() {
     const lockScreen = document.getElementById('lock-screen');
     const envelopeWrapper = document.getElementById('envelope-wrapper');
@@ -610,9 +759,9 @@ function checkAccess() {
         
         const adminDrawer = document.getElementById('admin-drawer');
         if (adminDrawer) {
-            setTimeout(() => {
+            setTimeout(async () => {
                 adminDrawer.classList.remove('hidden');
-                renderGuestList();
+                await syncAndLoadGuests();
             }, 1000);
         }
         return;
@@ -653,7 +802,7 @@ function checkAccess() {
     }
 }
 
-// 10. Efecto de Destellos en Hero (Canvas Sparkles)
+// 9. Efecto de Destellos en Hero (Canvas Sparkles)
 function initSparkles() {
     const canvas = document.getElementById('sparkles-canvas');
     if (!canvas) return;
