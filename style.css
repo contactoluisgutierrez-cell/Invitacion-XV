@@ -1518,45 +1518,71 @@ body::after {
 /* --------------------------------------------------
    14. VISTA DE IMPRESIÓN DEL BOLETO (PRINT CONFIG)
 -------------------------------------------------- */
+/* Print Styles for ticket output */
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #lock-screen, .audio-control-container, .invitation-container, .invitation-container * {
+    /* Ocultar secciones y elementos ajenos al boleto */
+    #lock-screen, 
+    #envelope-wrapper,
+    .audio-control-container,
+    .hero-section,
+    .timeline-section,
+    .locations-section,
+    .dresscode-section,
+    .rules-section,
+    .gift-section,
+    .footer,
+    #admin-drawer {
         display: none !important;
     }
-    #envelope-wrapper, #envelope-wrapper * {
+
+    #rsvp-section h2, 
+    #rsvp-section .section-subtitle, 
+    .rsvp-grid-container,
+    #rsvp-success-msg h3, 
+    #rsvp-success-msg p, 
+    #rsvp-success-msg #success-action-buttons, 
+    #rsvp-success-msg #btn-reset-form {
         display: none !important;
     }
-    #rsvp-success-msg, #rsvp-success-msg * {
+
+    /* Resetear contenedor principal y márgenes de página */
+    body, #main-content, .rsvp-section {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Mostrar boleto y centrarlo */
+    #rsvp-success-msg,
+    #final-ticket-placeholder,
+    .live-ticket, 
+    .live-ticket * {
         display: block !important;
         visibility: visible !important;
     }
-    .live-ticket, .live-ticket * {
-        visibility: visible !important;
-        display: block !important;
-    }
+
     .live-ticket {
         position: absolute;
         left: 50%;
-        top: 5%;
-        transform: translateX(-50%) scale(1.1);
+        top: 40px;
+        transform: translateX(-50%) scale(1.2);
+        transform-origin: top center;
         width: 320px;
-        box-shadow: none;
-        border: 2px solid #000 !important;
+        box-shadow: none !important;
+        border: 2.5px solid #000 !important;
         background: white !important;
     }
+
     .ticket-stub {
         border-right: 2px dashed #000 !important;
         background: #fdfdfd !important;
         color: #000 !important;
     }
+
     .stub-circle-top, .stub-circle-bottom {
         background: white !important;
         border: 1.5px solid #000 !important;
-    }
-    #rsvp-success-msg h3, #rsvp-success-msg p, #rsvp-success-msg #success-action-buttons, #rsvp-success-msg #btn-reset-form {
-        display: none !important;
     }
 }
 
