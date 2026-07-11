@@ -352,6 +352,25 @@ body::after {
     text-transform: uppercase;
 }
 
+.hero-event-date {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    letter-spacing: 4px;
+    color: var(--accent-gold);
+    margin-top: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+    .hero-event-date {
+        font-size: 2.8rem;
+        letter-spacing: 6px;
+        margin-top: 20px;
+    }
+}
+
 /* Cuenta Regresiva */
 .countdown-wrapper {
     display: flex;
