@@ -26,18 +26,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- FUNCIONES DE BASE DE DATOS EN LA NUBE (HTTP REST) ---
 
+// Función auxiliar de reintentos para hacer las peticiones 100% robustas ante caídas de red
+async function fetchWithRetry(url, options = {}, retries = 3, delay = 600) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) return response;
+            if (response.status === 404) return response; // 404 es correcto para claves no creadas aún
+        } catch (e) {
+            if (i === retries - 1) throw e; // Lanzar error si agotó todos los intentos
+        }
+        // Esperar un breve instante antes del siguiente intento
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    throw new Error(`No se pudo conectar tras ${retries} intentos.`);
+}
+
 // Obtener lista de IDs de invitados
 async function dbGetGuestIds() {
     try {
-        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest_ids`);
-        if (!response.ok) return [];
+        const response = await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest_ids`);
+        if (!response.ok) {
+            if (response.status === 404) return []; // No existe en la nube (DB nueva y vacía)
+            return null; // Error de conexión o servidor
+        }
         const text = await response.text();
         const cleaned = text.trim().replace(/^"|"$/g, '');
-        if (!cleaned) return [];
+        if (!cleaned || cleaned === "Value not found" || cleaned === "null") return [];
         return cleaned.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
     } catch (e) {
         console.error("Error al obtener IDs de la nube:", e);
-        return [];
+        return null; // Retornar null para indicar error de conexión y evitar sobreescrituras
     }
 }
 
@@ -45,7 +64,7 @@ async function dbGetGuestIds() {
 async function dbSaveGuestIds(ids) {
     try {
         const idsStr = ids.join(',');
-        await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest_ids/${idsStr}`, { method: 'POST' });
+        await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest_ids/${idsStr}`, { method: 'POST' });
     } catch (e) {
         console.error("Error al guardar IDs en la nube:", e);
     }
@@ -54,11 +73,11 @@ async function dbSaveGuestIds(ids) {
 // Obtener datos de un invitado individual
 async function dbGetGuest(id) {
     try {
-        const response = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest-${id}`);
+        const response = await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest-${id}`);
         if (!response.ok) return null;
         const text = await response.text();
         const cleaned = text.trim().replace(/^"|"$/g, '');
-        if (!cleaned) return null;
+        if (!cleaned || cleaned === "Value not found" || cleaned === "null") return null;
         
         // Decodificar Base64 URL-safe a JSON string
         const padding = cleaned.length % 4;
@@ -81,7 +100,7 @@ async function dbSaveGuest(guest) {
         // Codificar a Base64 URL-safe
         const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
         const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        await fetch(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest-${guest.id}/${safeB64}`, { method: 'POST' });
+        await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest-${guest.id}/${safeB64}`, { method: 'POST' });
     } catch (e) {
         console.error(`Error al guardar invitado ${guest.id} en la nube:`, e);
     }
@@ -90,9 +109,23 @@ async function dbSaveGuest(guest) {
 // Inicializar base de datos en la nube si está vacía
 async function dbInitIfEmpty() {
     try {
+        // Protección 1: Si ya existen registros locales en el cache, NUNCA sobreescribir con datos demo
+        const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+        if (localGuests.length > 0) {
+            console.log("El caché local ya tiene invitados. Se cancela inicialización demo.");
+            return;
+        }
+
         const ids = await dbGetGuestIds();
+        
+        // Protección 2: Si hay error de conexión (ids es null), NO inicializar para evitar borrar datos reales
+        if (ids === null) {
+            console.warn("Fallo de red al conectar a la nube. Se cancela inicialización demo.");
+            return;
+        }
+
         if (ids.length === 0) {
-            console.log("Inicializando base de datos en la nube...");
+            console.log("Inicializando base de datos en la nube vacía con datos demo...");
             const initialIds = [];
             for (const guest of DEFAULT_GUESTS) {
                 initialIds.push(guest.id);
@@ -265,10 +298,7 @@ function initRsvpForm() {
         document.querySelector('.rsvp-grid-container').classList.add('hidden');
         successMsg.classList.remove('hidden');
 
-        // Redireccionar de inmediato a WhatsApp de forma directa (seguro para Android y iOS)
-        window.location.href = whatsappUrl;
-
-        // Guardar en segundo plano a la nube para no retrasar la redirección
+        // Guardar primero en la nube y localmente para asegurar el registro
         try {
             const guestObj = {
                 id: newId,
@@ -281,12 +311,20 @@ function initRsvpForm() {
             };
             await dbSaveGuest(guestObj);
             
-            const ids = await dbGetGuestIds();
+            const ids = await dbGetGuestIds() || [];
             ids.push(newId);
             await dbSaveGuestIds(ids);
+
+            // Guardar en cache local de respaldo
+            let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+            localGuests.push(guestObj);
+            localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
         } catch (err) {
             console.error("Error al registrar en la nube:", err);
         }
+
+        // Una vez asegurado el registro en la nube, redireccionar a WhatsApp (seguro para Android y iOS)
+        window.location.href = whatsappUrl;
     });
 
     if (btnDownload) {
@@ -458,6 +496,9 @@ async function syncAndLoadGuests() {
 
     try {
         const ids = await dbGetGuestIds();
+        if (ids === null) {
+            throw new Error("No se pudo establecer conexión con el servidor. Mostrando base de datos local de respaldo.");
+        }
         const guests = [];
         
         // Carga paralela rápida
