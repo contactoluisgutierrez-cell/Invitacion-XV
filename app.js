@@ -239,12 +239,26 @@ function initRsvpForm() {
 
             // Pausa/delay de 500ms antes de capturar el elemento para permitir que todo renderice
             setTimeout(() => {
-                const element = document.getElementById('rsvp-live-ticket');
-                if (!element) {
+                const originalElement = document.getElementById('rsvp-live-ticket');
+                if (!originalElement) {
                     btnDownload.disabled = false;
                     btnDownload.innerHTML = originalContent;
                     return;
                 }
+
+                // Clonar el elemento de forma segura para evitar problemas de padres ocultos (display: none)
+                const element = originalElement.cloneNode(true);
+                
+                // Forzar visibilidad y colocar fuera de pantalla en el body
+                element.style.display = 'block';
+                element.style.visibility = 'visible';
+                element.style.position = 'absolute';
+                element.style.left = '-9999px';
+                element.style.top = '0';
+                element.style.boxShadow = 'none';
+
+                // Asegurar que el clon sea hijo directo de body para que html2canvas lo mida con sus dimensiones reales
+                document.body.appendChild(element);
 
                 const nameEl = document.getElementById('ticket-guest-name');
                 const name = nameEl ? nameEl.innerText.trim() : 'Pase_Digital';
@@ -254,26 +268,32 @@ function initRsvpForm() {
                     filename:     `Pase_XV_Ximena_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { 
-                        scale: 2.5, 
-                        useCORS: true,     // Vital para el código QR y fuentes remotas
-                        allowTaint: true,  // Permitir lienzos con imágenes externas
-                        letterRendering: true,
-                        logging: false
+                        scale: 2, 
+                        useCORS: true, 
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0
                     },
-                    jsPDF:        { unit: 'in', format: [4.5, 7.0], orientation: 'portrait' }
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
                 };
 
-                // Ejecutar la generación y descarga
+                // Ejecutar la generación y descarga desde el clon garantizado visible
                 html2pdf().set(opt).from(element).save()
                     .then(() => {
+                        // Limpiar el clon del DOM
+                        document.body.removeChild(element);
                         btnDownload.disabled = false;
                         btnDownload.innerHTML = originalContent;
                     })
                     .catch((err) => {
                         console.error("Error al generar PDF con html2pdf, usando impresión nativa:", err);
+                        // Limpiar el clon del DOM en caso de fallo
+                        if (document.body.contains(element)) {
+                            document.body.removeChild(element);
+                        }
                         btnDownload.disabled = false;
                         btnDownload.innerHTML = originalContent;
-                        // Fallback de respaldo nativo si falla la librería
+                        // Fallback de respaldo nativo
                         window.print();
                     });
             }, 500);
