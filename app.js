@@ -2,11 +2,21 @@
 const TARGET_DATE = new Date('August 29, 2026 15:00:00').getTime();
 const WHATSAPP_PHONE = "524427389456"; // Número para confirmación oficial de la tía
 
-// Datos iniciales de demostración para el panel de invitados (localStorage)
-const DEFAULT_GUESTS = [
-    { id: 101, name: "Familia Cazarin Blanco", attendance: "si", count: 4, code: "XV-2983", phone: "4421111111", status: "aprobado" },
-    { id: 102, name: "Tía Alicia y Tío Roberto", attendance: "si", count: 2, code: "XV-9012", phone: "4422222222", status: "aprobado" }
-];
+// Configuración de Firebase de la Web App
+const firebaseConfig = {
+  apiKey: "AIzaSyCcO1ENtpqb5xwEpe7m4AlQgJJahrXVrzM",
+  authDomain: "invitacion-xv-32415.firebaseapp.com",
+  databaseURL: "https://invitacion-xv-32415-default-rtdb.firebaseio.com",
+  projectId: "invitacion-xv-32415",
+  storageBucket: "invitacion-xv-32415.firebasestorage.app",
+  messagingSenderId: "1083290435039",
+  appId: "1:1083290435039:web:2177b586837aa637f6586a",
+  measurementId: "G-W3NR68PZVG"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAccess(); // Control de acceso y visualización de pases
 });
 
-// --- LÓGICA DE LA APLICACIÓN (100% LOCAL Y OFFLINE) ---
+// --- LÓGICA DE LA APLICACIÓN ---
 
 // 1. Apertura del Sobre Virtual (Envelope Intro)
 function initEnvelope() {
@@ -120,7 +130,7 @@ function initGuestCounter() {
     }
 }
 
-// 4. Formulario de RSVP (Guardado Local en localStorage)
+// 4. Formulario de RSVP (Integrado con Firebase Realtime Database)
 function initRsvpForm() {
     const form = document.getElementById('rsvp-form');
     const successMsg = document.getElementById('rsvp-success-msg');
@@ -144,6 +154,14 @@ function initRsvpForm() {
 
         if (!name || !phone) return;
 
+        // Deshabilitar botón para prevenir múltiples envíos
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        }
+
         // Generar código único y ID de timestamp
         const uniqueCode = 'XV-' + Math.floor(1000 + Math.random() * 9000);
         const newId = Date.now();
@@ -152,8 +170,6 @@ function initRsvpForm() {
         if (ticketCodeEl) ticketCodeEl.innerText = uniqueCode;
         if (ticketCountEl) ticketCountEl.innerText = "Pendiente";
 
-        // Guardar de inmediato de forma local en el navegador
-        let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
         const guestObj = {
             id: newId,
             name: name,
@@ -163,45 +179,104 @@ function initRsvpForm() {
             phone: phone,
             status: 'pendiente'
         };
-        localGuests.push(guestObj);
-        localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
 
-        // Configurar pantalla de éxito en modo "Espera"
-        document.getElementById('success-status-title').innerText = "¡Registro en Proceso!";
-        document.getElementById('success-status-desc').innerText = "Tu solicitud ha sido enviada. Tu pase digital te llegará por WhatsApp en cuanto la organizadora asigne tus pases.";
-        
-        const actionButtonsBlock = document.getElementById('success-action-buttons');
-        if (actionButtonsBlock) {
-            actionButtonsBlock.classList.add('hidden');
-        }
+        // 1. Guardar en Firebase Realtime Database
+        db.ref('guests/' + newId).set(guestObj)
+            .then(() => {
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
 
-        // WhatsApp para la tía (solicitando pases)
-        const attendanceText = attendanceVal === 'si' ? 'Sí, deseo asistir' : 'Lo sentimos, no podré asistir';
-        const hostMessage = `¡Hola! Me he registrado en la invitación web para los *XV Años de Ximena Blanco Castillo* 🌸\n\n` +
-                            `👤 *Nombre/Familia:* ${name}\n` +
-                            `📞 *WhatsApp:* ${phone}\n` +
-                            `💌 *Asistencia:* ${attendanceText}\n\n` +
-                            `Quedo en espera de que asignes mis pases para recibir mi pase digital. ¡Muchas gracias! ✨`;
+                // Configurar pantalla de éxito en modo "Espera"
+                document.getElementById('success-status-title').innerText = "¡Registro en Proceso!";
+                document.getElementById('success-status-desc').innerText = "Tu solicitud ha sido enviada. Tu pase digital te llegará por WhatsApp en cuanto la organizadora asigne tus pases.";
+                
+                const actionButtonsBlock = document.getElementById('success-action-buttons');
+                if (actionButtonsBlock) {
+                    actionButtonsBlock.classList.add('hidden');
+                }
 
-        const encodedHostMessage = encodeURIComponent(hostMessage);
-        const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodedHostMessage}`;
+                // WhatsApp para la tía (solicitando pases)
+                const attendanceText = attendanceVal === 'si' ? 'Sí, deseo asistir' : 'Lo sentimos, no podré asistir';
+                const hostMessage = `¡Hola! Me he registrado en la invitación web para los *XV Años de Ximena Blanco Castillo* 🌸\n\n` +
+                                    `👤 *Nombre/Familia:* ${name}\n` +
+                                    `📞 *WhatsApp:* ${phone}\n` +
+                                    `💌 *Asistencia:* ${attendanceText}\n\n` +
+                                    `Quedo en espera de que asignes mis pases para recibir mi pase digital. ¡Muchas gracias! ✨`;
 
-        // Mover el boleto al placeholder final
-        if (placeholder && liveTicket) {
-            placeholder.appendChild(liveTicket);
-        }
-        
-        // Ocultar formulario, mostrar éxito
-        document.querySelector('.rsvp-grid-container').classList.add('hidden');
-        successMsg.classList.remove('hidden');
+                const encodedHostMessage = encodeURIComponent(hostMessage);
+                const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodedHostMessage}`;
 
-        // Redireccionar de inmediato a WhatsApp
-        window.location.href = whatsappUrl;
+                // Mover el boleto al placeholder de éxito
+                if (placeholder && liveTicket) {
+                    placeholder.appendChild(liveTicket);
+                }
+                
+                // Ocultar formulario, mostrar éxito
+                document.querySelector('.rsvp-grid-container').classList.add('hidden');
+                successMsg.classList.remove('hidden');
+
+                // Redireccionar de inmediato a WhatsApp
+                window.location.href = whatsappUrl;
+            })
+            .catch((error) => {
+                console.error("Error al registrar en Firebase:", error);
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+                alert("Hubo un error de conexión al procesar tu confirmación. Intenta de nuevo.");
+            });
     });
 
     if (btnDownload) {
         btnDownload.addEventListener('click', () => {
-            window.print();
+            // Deshabilitar botón para evitar clics dobles y mostrar indicador de carga
+            btnDownload.disabled = true;
+            const originalContent = btnDownload.innerHTML;
+            btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PDF...';
+
+            // Pausa/delay de 500ms antes de capturar el elemento para permitir que todo renderice
+            setTimeout(() => {
+                const element = document.getElementById('rsvp-live-ticket');
+                if (!element) {
+                    btnDownload.disabled = false;
+                    btnDownload.innerHTML = originalContent;
+                    return;
+                }
+
+                const nameEl = document.getElementById('ticket-guest-name');
+                const name = nameEl ? nameEl.innerText.trim() : 'Pase_Digital';
+                
+                const opt = {
+                    margin:       [0.2, 0.2, 0.2, 0.2],
+                    filename:     `Pase_XV_Ximena_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { 
+                        scale: 2.5, 
+                        useCORS: true,     // Vital para el código QR y fuentes remotas
+                        allowTaint: true,  // Permitir lienzos con imágenes externas
+                        letterRendering: true,
+                        logging: false
+                    },
+                    jsPDF:        { unit: 'in', format: [4.5, 7.0], orientation: 'portrait' }
+                };
+
+                // Ejecutar la generación y descarga
+                html2pdf().set(opt).from(element).save()
+                    .then(() => {
+                        btnDownload.disabled = false;
+                        btnDownload.innerHTML = originalContent;
+                    })
+                    .catch((err) => {
+                        console.error("Error al generar PDF con html2pdf, usando impresión nativa:", err);
+                        btnDownload.disabled = false;
+                        btnDownload.innerHTML = originalContent;
+                        // Fallback de respaldo nativo si falla la librería
+                        window.print();
+                    });
+            }, 500);
         });
     }
 
@@ -270,7 +345,7 @@ function initScrollReveal() {
     reveals.forEach(el => observer.observe(el));
 }
 
-// 7. Panel de Administración (100% Local con localStorage)
+// 7. Panel de Administración (Integrado en tiempo real con Firebase)
 function initAdminPanel() {
     const adminToggle = document.getElementById('admin-toggle-btn');
     const adminDrawer = document.getElementById('admin-drawer');
@@ -279,15 +354,10 @@ function initAdminPanel() {
     const btnToggleAdd = document.getElementById('btn-toggle-add-guest');
     const addGuestForm = document.getElementById('admin-add-guest-form');
 
-    // Inicializar localStorage con datos por defecto solo si está completamente vacío
-    if (!localStorage.getItem('guests_rsvp')) {
-        localStorage.setItem('guests_rsvp', JSON.stringify(DEFAULT_GUESTS));
-    }
-
     if (adminToggle) {
         adminToggle.addEventListener('click', () => {
             adminDrawer.classList.remove('hidden');
-            renderGuestList();
+            syncAndLoadGuests(); // Escuchar en tiempo real a Firebase
         });
     }
 
@@ -299,9 +369,14 @@ function initAdminPanel() {
 
     if (btnClear) {
         btnClear.addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados?')) {
-                localStorage.setItem('guests_rsvp', JSON.stringify([]));
-                renderGuestList();
+            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados de Firebase?')) {
+                db.ref('guests').set(null)
+                    .then(() => {
+                        console.log("Todos los invitados borrados.");
+                    })
+                    .catch((err) => {
+                        console.error("Error al borrar de Firebase:", err);
+                    });
             }
         });
     }
@@ -313,7 +388,7 @@ function initAdminPanel() {
         });
     }
 
-    // Guardar registro manual directamente en localStorage
+    // Guardar registro manual directamente en Firebase
     if (addGuestForm) {
         addGuestForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -335,19 +410,51 @@ function initAdminPanel() {
                 status: 'pendiente'
             };
 
-            let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-            localGuests.push(newGuestObj);
-            localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
-            
-            addGuestForm.reset();
-            addGuestForm.classList.add('hidden');
-            
-            renderGuestList();
+            db.ref('guests/' + newId).set(newGuestObj)
+                .then(() => {
+                    addGuestForm.reset();
+                    addGuestForm.classList.add('hidden');
+                })
+                .catch((error) => {
+                    console.error("Error al registrar en Firebase:", error);
+                    alert("Error de conexión al agregar el registro.");
+                });
         });
     }
 }
 
-// Renderizar la tabla con soporte de localStorage
+// Sincronizar y escuchar cambios de Firebase en Tiempo Real
+function syncAndLoadGuests() {
+    const loadingEl = document.getElementById('admin-loading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
+    // Escuchar el nodo /guests en tiempo real
+    db.ref('guests').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const guests = [];
+        
+        if (data) {
+            Object.keys(data).forEach(key => {
+                guests.push(data[key]);
+            });
+        }
+
+        // Ordenar por ID descendente (los más recientes primero)
+        guests.sort((a, b) => b.id - a.id);
+
+        // Guardar copia local de respaldo
+        localStorage.setItem('guests_rsvp', JSON.stringify(guests));
+
+        if (loadingEl) loadingEl.classList.add('hidden');
+        renderGuestList();
+    }, (error) => {
+        console.error("Error en lectura de Firebase:", error);
+        if (loadingEl) loadingEl.classList.add('hidden');
+        renderGuestList(); // Cargar caché de respaldo
+    });
+}
+
+// Renderizar la tabla de invitados
 function renderGuestList() {
     const guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
     const tableBody = document.getElementById('guest-list-body');
@@ -416,11 +523,11 @@ function renderGuestList() {
     if (totalGuestsEl) totalGuestsEl.innerText = totalConfirmedPases;
     if (totalFamiliesEl) totalFamiliesEl.innerText = totalFamilies;
 
-    // Conectar eventos de botones
+    // Conectar eventos
     tableBody.querySelectorAll('.btn-delete-row').forEach(btn => {
         btn.addEventListener('click', () => {
             const guestId = parseInt(btn.getAttribute('data-id'));
-            if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
+            if (confirm('¿Estás seguro de que deseas eliminar este registro de Firebase?')) {
                 deleteGuestLocal(guestId);
             }
         });
@@ -441,21 +548,28 @@ function renderGuestList() {
     });
 }
 
-// Acción de aprobación y guardado local
+// Acción de aprobación en Firebase
 function approveAndSendGuest(id) {
-    let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-    const idx = guests.findIndex(g => g.id === id);
-    if (idx === -1) return;
-
     const pasesInput = document.getElementById(`pases-input-${id}`);
     const pasesCount = pasesInput ? parseInt(pasesInput.value) : 2;
 
-    guests[idx].status = 'aprobado';
-    guests[idx].count = pasesCount;
-    localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-
-    renderGuestList();
-    sendPassViaWhatsApp(guests[idx], pasesCount);
+    // Actualizar datos del invitado en Firebase Realtime Database
+    db.ref('guests/' + id).update({
+        status: 'aprobado',
+        count: pasesCount
+    })
+    .then(() => {
+        // Cargar el registro desde el caché actualizado de Firebase
+        const guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+        const guest = guests.find(g => g.id === id);
+        if (guest) {
+            sendPassViaWhatsApp(guest, pasesCount);
+        }
+    })
+    .catch((error) => {
+        console.error("Error al actualizar pase en Firebase:", error);
+        alert("Error de conexión al aprobar el pase.");
+    });
 }
 
 function resendGuestPass(id) {
@@ -466,7 +580,7 @@ function resendGuestPass(id) {
     sendPassViaWhatsApp(guest, guest.count);
 }
 
-// Enviar boleto abriendo directamente el chat de WhatsApp
+// Enviar boleto abriendo chat de WhatsApp
 function sendPassViaWhatsApp(guest, pasesCount) {
     const baseUrl = window.location.href.split('?')[0];
     const guestLink = `${baseUrl}?acceso=ximena&viewpass=true&name=${encodeURIComponent(guest.name)}&pases=${pasesCount}&code=${guest.code}&phone=${guest.phone}`;
@@ -486,12 +600,16 @@ function sendPassViaWhatsApp(guest, pasesCount) {
     window.location.href = whatsappUrl;
 }
 
-// Eliminar localmente de localStorage
+// Eliminar de Firebase
 function deleteGuestLocal(id) {
-    let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-    guests = guests.filter(guest => guest.id !== id);
-    localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-    renderGuestList();
+    db.ref('guests/' + id).remove()
+        .then(() => {
+            console.log("Eliminado de Firebase");
+        })
+        .catch((error) => {
+            console.error("Error al borrar de Firebase:", error);
+            alert("No se pudo eliminar el registro. Intenta de nuevo.");
+        });
 }
 
 function escapeHTML(str) {
@@ -610,7 +728,7 @@ function checkAccess() {
         if (adminDrawer) {
             setTimeout(() => {
                 adminDrawer.classList.remove('hidden');
-                renderGuestList();
+                syncAndLoadGuests(); // Escuchar Firebase en tiempo real
             }, 1000);
         }
         return;
