@@ -472,16 +472,28 @@ function initAdminPanel() {
 
             try {
                 await dbSaveGuest(newGuestObj);
-                const ids = await dbGetGuestIds();
+                let ids = await dbGetGuestIds();
+                if (ids === null) {
+                    const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+                    ids = localGuests.map(g => g.id);
+                }
                 ids.push(newId);
                 await dbSaveGuestIds(ids);
                 
                 addGuestForm.reset();
                 addGuestForm.classList.add('hidden');
-                
                 await syncAndLoadGuests();
             } catch (err) {
-                console.error("Error al registrar manualmente:", err);
+                console.error("Error al registrar en la nube, guardando localmente:", err);
+                
+                // Fallback de respaldo: Guardar localmente
+                let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+                localGuests.push(newGuestObj);
+                localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
+                
+                addGuestForm.reset();
+                addGuestForm.classList.add('hidden');
+                renderGuestList();
             } finally {
                 if (loadingEl) loadingEl.classList.add('hidden');
             }
@@ -675,12 +687,22 @@ async function deleteGuestFromCloud(id) {
     if (loadingEl) loadingEl.classList.remove('hidden');
 
     try {
-        const ids = await dbGetGuestIds();
+        let ids = await dbGetGuestIds();
+        if (ids === null) {
+            const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+            ids = localGuests.map(g => g.id);
+        }
         const updatedIds = ids.filter(guestId => guestId !== id);
         await dbSaveGuestIds(updatedIds);
         await syncAndLoadGuests();
     } catch (err) {
-        console.error("Error al eliminar de la nube:", err);
+        console.error("Error al eliminar de la nube, eliminando localmente:", err);
+        
+        // Fallback de respaldo: Eliminar localmente
+        let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+        localGuests = localGuests.filter(guest => guest.id !== id);
+        localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
+        renderGuestList();
     } finally {
         if (loadingEl) loadingEl.classList.add('hidden');
     }
