@@ -2,10 +2,7 @@
 const TARGET_DATE = new Date('August 29, 2026 15:00:00').getTime();
 const WHATSAPP_PHONE = "524427389456"; // Número para confirmación oficial de la tía
 
-// Clave única para el almacenamiento compartido en la nube
-const DB_KEY = "ayknna2s"; 
-
-// Datos iniciales de demostración para inicializar base de datos
+// Datos iniciales de demostración para el panel de invitados (localStorage)
 const DEFAULT_GUESTS = [
     { id: 101, name: "Familia Cazarin Blanco", attendance: "si", count: 4, code: "XV-2983", phone: "4421111111", status: "aprobado" },
     { id: 102, name: "Tía Alicia y Tío Roberto", attendance: "si", count: 2, code: "XV-9012", phone: "4422222222", status: "aprobado" }
@@ -24,121 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAccess(); // Control de acceso y visualización de pases
 });
 
-// --- FUNCIONES DE BASE DE DATOS EN LA NUBE (HTTP REST) ---
-
-// Función auxiliar de reintentos para hacer las peticiones 100% robustas ante caídas de red
-async function fetchWithRetry(url, options = {}, retries = 3, delay = 600) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-            if (response.ok) return response;
-            if (response.status === 404) return response; // 404 es correcto para claves no creadas aún
-        } catch (e) {
-            if (i === retries - 1) throw e; // Lanzar error si agotó todos los intentos
-        }
-        // Esperar un breve instante antes del siguiente intento
-        await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    throw new Error(`No se pudo conectar tras ${retries} intentos.`);
-}
-
-// Obtener lista de IDs de invitados
-async function dbGetGuestIds() {
-    try {
-        const response = await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest_ids`);
-        if (!response.ok) {
-            if (response.status === 404) return []; // No existe en la nube (DB nueva y vacía)
-            return null; // Error de conexión o servidor
-        }
-        const text = await response.text();
-        const cleaned = text.trim().replace(/^"|"$/g, '');
-        if (!cleaned || cleaned === "Value not found" || cleaned === "null") return [];
-        return cleaned.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
-    } catch (e) {
-        console.error("Error al obtener IDs de la nube:", e);
-        return null; // Retornar null para indicar error de conexión y evitar sobreescrituras
-    }
-}
-
-// Guardar lista de IDs de invitados
-async function dbSaveGuestIds(ids) {
-    try {
-        const idsStr = ids.join(',');
-        await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest_ids/${idsStr}`, { method: 'POST' });
-    } catch (e) {
-        console.error("Error al guardar IDs en la nube:", e);
-    }
-}
-
-// Obtener datos de un invitado individual
-async function dbGetGuest(id) {
-    try {
-        const response = await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${DB_KEY}/guest-${id}`);
-        if (!response.ok) return null;
-        const text = await response.text();
-        const cleaned = text.trim().replace(/^"|"$/g, '');
-        if (!cleaned || cleaned === "Value not found" || cleaned === "null") return null;
-        
-        // Decodificar Base64 URL-safe a JSON string
-        const padding = cleaned.length % 4;
-        let b64 = cleaned;
-        if (padding === 2) b64 += "==";
-        else if (padding === 3) b64 += "=";
-        const restoredB64 = b64.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonStr = decodeURIComponent(escape(atob(restoredB64)));
-        return JSON.parse(jsonStr);
-    } catch (e) {
-        console.error(`Error al obtener invitado ${id} de la nube:`, e);
-        return null;
-    }
-}
-
-// Guardar/Actualizar datos de un invitado individual
-async function dbSaveGuest(guest) {
-    try {
-        const jsonStr = JSON.stringify(guest);
-        // Codificar a Base64 URL-safe
-        const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
-        const safeB64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        await fetchWithRetry(`https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${DB_KEY}/guest-${guest.id}/${safeB64}`, { method: 'POST' });
-    } catch (e) {
-        console.error(`Error al guardar invitado ${guest.id} en la nube:`, e);
-    }
-}
-
-// Inicializar base de datos en la nube si está vacía
-async function dbInitIfEmpty() {
-    try {
-        // Protección 1: Si ya existen registros locales en el cache, NUNCA sobreescribir con datos demo
-        const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-        if (localGuests.length > 0) {
-            console.log("El caché local ya tiene invitados. Se cancela inicialización demo.");
-            return;
-        }
-
-        const ids = await dbGetGuestIds();
-        
-        // Protección 2: Si hay error de conexión (ids es null), NO inicializar para evitar borrar datos reales
-        if (ids === null) {
-            console.warn("Fallo de red al conectar a la nube. Se cancela inicialización demo.");
-            return;
-        }
-
-        if (ids.length === 0) {
-            console.log("Inicializando base de datos en la nube vacía con datos demo...");
-            const initialIds = [];
-            for (const guest of DEFAULT_GUESTS) {
-                initialIds.push(guest.id);
-                await dbSaveGuest(guest);
-            }
-            await dbSaveGuestIds(initialIds);
-        }
-    } catch (e) {
-        console.error("Error al inicializar base de datos:", e);
-    }
-}
-
-// --- LÓGICA DE LA APLICACIÓN ---
+// --- LÓGICA DE LA APLICACIÓN (100% LOCAL Y OFFLINE) ---
 
 // 1. Apertura del Sobre Virtual (Envelope Intro)
 function initEnvelope() {
@@ -237,7 +120,7 @@ function initGuestCounter() {
     }
 }
 
-// 4. Formulario de RSVP (Registro en espera)
+// 4. Formulario de RSVP (Guardado Local en localStorage)
 function initRsvpForm() {
     const form = document.getElementById('rsvp-form');
     const successMsg = document.getElementById('rsvp-success-msg');
@@ -251,7 +134,7 @@ function initRsvpForm() {
 
     if (!form) return;
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
 
         const name = document.getElementById('guest-name').value.trim();
@@ -268,6 +151,20 @@ function initRsvpForm() {
         // Actualizar UI del boleto en vivo
         if (ticketCodeEl) ticketCodeEl.innerText = uniqueCode;
         if (ticketCountEl) ticketCountEl.innerText = "Pendiente";
+
+        // Guardar de inmediato de forma local en el navegador
+        let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+        const guestObj = {
+            id: newId,
+            name: name,
+            attendance: attendanceVal,
+            count: 0,
+            code: uniqueCode,
+            phone: phone,
+            status: 'pendiente'
+        };
+        localGuests.push(guestObj);
+        localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
 
         // Configurar pantalla de éxito en modo "Espera"
         document.getElementById('success-status-title').innerText = "¡Registro en Proceso!";
@@ -298,32 +195,7 @@ function initRsvpForm() {
         document.querySelector('.rsvp-grid-container').classList.add('hidden');
         successMsg.classList.remove('hidden');
 
-        // Guardar primero en la nube y localmente para asegurar el registro
-        try {
-            const guestObj = {
-                id: newId,
-                name: name,
-                attendance: attendanceVal,
-                count: 0,
-                code: uniqueCode,
-                phone: phone,
-                status: 'pendiente'
-            };
-            await dbSaveGuest(guestObj);
-            
-            const ids = await dbGetGuestIds() || [];
-            ids.push(newId);
-            await dbSaveGuestIds(ids);
-
-            // Guardar en cache local de respaldo
-            let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-            localGuests.push(guestObj);
-            localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
-        } catch (err) {
-            console.error("Error al registrar en la nube:", err);
-        }
-
-        // Una vez asegurado el registro en la nube, redireccionar a WhatsApp (seguro para Android y iOS)
+        // Redireccionar de inmediato a WhatsApp
         window.location.href = whatsappUrl;
     });
 
@@ -398,7 +270,7 @@ function initScrollReveal() {
     reveals.forEach(el => observer.observe(el));
 }
 
-// 7. Panel de Administración (La Tía)
+// 7. Panel de Administración (100% Local con localStorage)
 function initAdminPanel() {
     const adminToggle = document.getElementById('admin-toggle-btn');
     const adminDrawer = document.getElementById('admin-drawer');
@@ -407,13 +279,15 @@ function initAdminPanel() {
     const btnToggleAdd = document.getElementById('btn-toggle-add-guest');
     const addGuestForm = document.getElementById('admin-add-guest-form');
 
-    // Inicializar DB en la nube si es nueva
-    dbInitIfEmpty();
+    // Inicializar localStorage con datos por defecto solo si está completamente vacío
+    if (!localStorage.getItem('guests_rsvp')) {
+        localStorage.setItem('guests_rsvp', JSON.stringify(DEFAULT_GUESTS));
+    }
 
     if (adminToggle) {
-        adminToggle.addEventListener('click', async () => {
+        adminToggle.addEventListener('click', () => {
             adminDrawer.classList.remove('hidden');
-            await syncAndLoadGuests();
+            renderGuestList();
         });
     }
 
@@ -424,15 +298,9 @@ function initAdminPanel() {
     }
 
     if (btnClear) {
-        btnClear.addEventListener('click', async () => {
-            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados de la nube?')) {
-                const loadingEl = document.getElementById('admin-loading');
-                if (loadingEl) loadingEl.classList.remove('hidden');
-                
-                await dbSaveGuestIds([]);
+        btnClear.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que deseas borrar toda la lista de invitados?')) {
                 localStorage.setItem('guests_rsvp', JSON.stringify([]));
-                
-                if (loadingEl) loadingEl.classList.add('hidden');
                 renderGuestList();
             }
         });
@@ -445,17 +313,14 @@ function initAdminPanel() {
         });
     }
 
-    // Guardar registro manual directamente a la nube
+    // Guardar registro manual directamente en localStorage
     if (addGuestForm) {
-        addGuestForm.addEventListener('submit', async (e) => {
+        addGuestForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('admin-new-name').value.trim();
             const phone = document.getElementById('admin-new-phone').value.trim();
 
             if (!name || !phone) return;
-
-            const loadingEl = document.getElementById('admin-loading');
-            if (loadingEl) loadingEl.classList.remove('hidden');
 
             const uniqueCode = 'XV-' + Math.floor(1000 + Math.random() * 9000);
             const newId = Date.now();
@@ -470,67 +335,19 @@ function initAdminPanel() {
                 status: 'pendiente'
             };
 
-            try {
-                await dbSaveGuest(newGuestObj);
-                let ids = await dbGetGuestIds();
-                if (ids === null) {
-                    const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-                    ids = localGuests.map(g => g.id);
-                }
-                ids.push(newId);
-                await dbSaveGuestIds(ids);
-                
-                addGuestForm.reset();
-                addGuestForm.classList.add('hidden');
-                await syncAndLoadGuests();
-            } catch (err) {
-                console.error("Error al registrar en la nube, guardando localmente:", err);
-                
-                // Fallback de respaldo: Guardar localmente
-                let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-                localGuests.push(newGuestObj);
-                localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
-                
-                addGuestForm.reset();
-                addGuestForm.classList.add('hidden');
-                renderGuestList();
-            } finally {
-                if (loadingEl) loadingEl.classList.add('hidden');
-            }
+            let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+            localGuests.push(newGuestObj);
+            localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
+            
+            addGuestForm.reset();
+            addGuestForm.classList.add('hidden');
+            
+            renderGuestList();
         });
     }
 }
 
-// Sincronizar de forma segura descargando todos los registros de la nube
-async function syncAndLoadGuests() {
-    const loadingEl = document.getElementById('admin-loading');
-    if (loadingEl) loadingEl.classList.remove('hidden');
-
-    try {
-        const ids = await dbGetGuestIds();
-        if (ids === null) {
-            throw new Error("No se pudo establecer conexión con el servidor. Mostrando base de datos local de respaldo.");
-        }
-        const guests = [];
-        
-        // Carga paralela rápida
-        const promises = ids.map(id => dbGetGuest(id));
-        const fetched = await Promise.all(promises);
-        
-        fetched.forEach(g => {
-            if (g) guests.push(g);
-        });
-
-        localStorage.setItem('guests_rsvp', JSON.stringify(guests));
-    } catch (e) {
-        console.error("Error al sincronizar con la nube, usando cache local:", e);
-    } finally {
-        if (loadingEl) loadingEl.classList.add('hidden');
-        renderGuestList();
-    }
-}
-
-// Renderizar la tabla con soporte de sincronización y botones
+// Renderizar la tabla con soporte de localStorage
 function renderGuestList() {
     const guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
     const tableBody = document.getElementById('guest-list-body');
@@ -599,12 +416,12 @@ function renderGuestList() {
     if (totalGuestsEl) totalGuestsEl.innerText = totalConfirmedPases;
     if (totalFamiliesEl) totalFamiliesEl.innerText = totalFamilies;
 
-    // Conectar eventos de botones de la tabla
+    // Conectar eventos de botones
     tableBody.querySelectorAll('.btn-delete-row').forEach(btn => {
         btn.addEventListener('click', () => {
             const guestId = parseInt(btn.getAttribute('data-id'));
             if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
-                deleteGuestFromCloud(guestId);
+                deleteGuestLocal(guestId);
             }
         });
     });
@@ -624,11 +441,8 @@ function renderGuestList() {
     });
 }
 
-// Acción de aprobación y guardado en la nube
-async function approveAndSendGuest(id) {
-    const loadingEl = document.getElementById('admin-loading');
-    if (loadingEl) loadingEl.classList.remove('hidden');
-
+// Acción de aprobación y guardado local
+function approveAndSendGuest(id) {
     let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
     const idx = guests.findIndex(g => g.id === id);
     if (idx === -1) return;
@@ -640,16 +454,8 @@ async function approveAndSendGuest(id) {
     guests[idx].count = pasesCount;
     localStorage.setItem('guests_rsvp', JSON.stringify(guests));
 
-    try {
-        // Actualizar en la nube
-        await dbSaveGuest(guests[idx]);
-    } catch (err) {
-        console.error("Error al guardar aprobación en la nube:", err);
-    } finally {
-        if (loadingEl) loadingEl.classList.add('hidden');
-        renderGuestList();
-        sendPassViaWhatsApp(guests[idx], pasesCount);
-    }
+    renderGuestList();
+    sendPassViaWhatsApp(guests[idx], pasesCount);
 }
 
 function resendGuestPass(id) {
@@ -660,7 +466,7 @@ function resendGuestPass(id) {
     sendPassViaWhatsApp(guest, guest.count);
 }
 
-// Enviar boleto abriendo directamente el chat de WhatsApp (100% compatible con móviles)
+// Enviar boleto abriendo directamente el chat de WhatsApp
 function sendPassViaWhatsApp(guest, pasesCount) {
     const baseUrl = window.location.href.split('?')[0];
     const guestLink = `${baseUrl}?acceso=ximena&viewpass=true&name=${encodeURIComponent(guest.name)}&pases=${pasesCount}&code=${guest.code}&phone=${guest.phone}`;
@@ -677,35 +483,15 @@ function sendPassViaWhatsApp(guest, pasesCount) {
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=52${guest.phone}&text=${encodedMessage}`;
 
-    // Abrir de forma directa en la misma pestaña para asegurar la intercepción de la app de WhatsApp
     window.location.href = whatsappUrl;
 }
 
-// Eliminar de la nube y re-sincronizar
-async function deleteGuestFromCloud(id) {
-    const loadingEl = document.getElementById('admin-loading');
-    if (loadingEl) loadingEl.classList.remove('hidden');
-
-    try {
-        let ids = await dbGetGuestIds();
-        if (ids === null) {
-            const localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-            ids = localGuests.map(g => g.id);
-        }
-        const updatedIds = ids.filter(guestId => guestId !== id);
-        await dbSaveGuestIds(updatedIds);
-        await syncAndLoadGuests();
-    } catch (err) {
-        console.error("Error al eliminar de la nube, eliminando localmente:", err);
-        
-        // Fallback de respaldo: Eliminar localmente
-        let localGuests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
-        localGuests = localGuests.filter(guest => guest.id !== id);
-        localStorage.setItem('guests_rsvp', JSON.stringify(localGuests));
-        renderGuestList();
-    } finally {
-        if (loadingEl) loadingEl.classList.add('hidden');
-    }
+// Eliminar localmente de localStorage
+function deleteGuestLocal(id) {
+    let guests = JSON.parse(localStorage.getItem('guests_rsvp')) || [];
+    guests = guests.filter(guest => guest.id !== id);
+    localStorage.setItem('guests_rsvp', JSON.stringify(guests));
+    renderGuestList();
 }
 
 function escapeHTML(str) {
@@ -822,9 +608,9 @@ function checkAccess() {
         
         const adminDrawer = document.getElementById('admin-drawer');
         if (adminDrawer) {
-            setTimeout(async () => {
+            setTimeout(() => {
                 adminDrawer.classList.remove('hidden');
-                await syncAndLoadGuests();
+                renderGuestList();
             }, 1000);
         }
         return;
